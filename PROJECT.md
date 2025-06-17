@@ -1,4 +1,4 @@
-# Project Investigation Report
+# Project Report
 
 ## 🏗️ Architecture Overview
 

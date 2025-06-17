@@ -4,16 +4,18 @@ import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Code, Play, Save, Trash, Bug, Plus, Loader2, AlertCircle } from "lucide-react";
-import { ModelNode } from "@/components/flow/nodes/model-node";
+import { Code, Play, Save, Trash, Bug, Loader2, AlertCircle } from "lucide-react";
+
+// Import node components
+import { ModelNode } from "./nodes/model-node";
 import { InputNode } from "@/components/flow/nodes/input-node";
 import { OutputNode } from "@/components/flow/nodes/output-node";
 import { AgentNode } from "@/components/flow/nodes/agent-node";
 import { PromptNode } from "@/components/flow/nodes/prompt-node";
 import { NodePropertiesPanel } from "@/components/flow/node-properties-panel";
-import { AnthropicNode } from "@/components/flow/nodes/anthropic-node";
-import { HuggingFaceNode } from "@/components/flow/nodes/huggingface-node";
-import { LocalModelNode } from "@/components/flow/nodes/local-model-node";
+import { AnthropicNode } from "./nodes/anthropic-node";
+import { HuggingFaceNode } from "./nodes/huggingface-node";
+import { LocalModelNode } from "./nodes/local-model-node";
 import { FileInputNode } from "@/components/flow/nodes/file-input-node";
 import { StreamOutputNode } from "@/components/flow/nodes/stream-output-node";
 import { FileOutputNode } from "@/components/flow/nodes/file-output-node";
@@ -28,54 +30,20 @@ import { VectorStoreNode } from "@/components/flow/nodes/vectorstore-node";
 import { DocumentLoaderNode } from "@/components/flow/nodes/document-loader-node";
 import { TextSplitterNode } from "@/components/flow/nodes/text-splitter-node";
 import APIInputNode from "@/components/flow/nodes/API-input-node";
+import { DeepSeekNode } from "./nodes/deepseek-node";
+import { OllamaNode } from "./nodes/ollama-node";
 
+// ReactFlow imports
 import type { Node, Edge, Connection, NodeTypes, NodeChange, EdgeChange } from "reactflow";
-import { MarkerType, ConnectionLineType, BackgroundVariant, useNodesState, useEdgesState } from "reactflow";
-import { addEdge } from "reactflow";
-
+import { MarkerType, ConnectionLineType, BackgroundVariant, useNodesState, useEdgesState, addEdge } from "reactflow";
 import "reactflow/dist/style.css";
 
-// 🎯 API INTEGRATION - Import backend services
+// API imports
 import { workflowService } from "@/lib/api/workflows";
 import { aiService, AIModelConfig } from "@/lib/api/ai";
-import { taskStatusService } from "@/lib/api/taskStatus";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useRouter } from "next/navigation";
-import apiClient from "@/lib/api/client";
-import { NodeProps, Node as ReactFlowNode } from 'reactflow';
-import {
-  NodeType,
-  WorkflowNode,
-  WorkflowTask,
-  AIConfig,
-  AIProvider,
-  AIModel,
-  ApiResponse,
-  PaginatedResponse,
-  NodeRegistry,
-  CustomNodeTypes,
-  NodeData,
-  FlowNodeData,
-  AINodeData,
-  isNodeData,
-  isAIConfig,
-  convertApiNodeToFlowNode,
-  convertApiAIConfigToFlowConfig
-} from '@/lib/types/flow';
-import {
-  ApiResponse as ApiResponseType,
-  ApiWorkflowNode,
-  ApiAIModelConfig,
-  isApiResponse,
-  assertApiResponse,
-  assertApiWorkflowNode,
-  assertApiAIModelConfig
-} from '@/lib/types/api';
-
-// Import the new services
-import { nodeService } from '@/lib/api/nodes';
-import { aiProviderService } from '@/lib/api/ai-provider';
 
 // Dynamic imports for SSR compatibility
 const ReactFlow = dynamic(() => import("reactflow").then((mod) => mod.ReactFlow), { ssr: false });
@@ -84,7 +52,7 @@ const Controls = dynamic(() => import("reactflow").then((mod) => mod.Controls), 
 const MiniMap = dynamic(() => import("reactflow").then((mod) => mod.MiniMap), { ssr: false });
 const Panel = dynamic(() => import("reactflow").then((mod) => mod.Panel), { ssr: false });
 
-// 🔧 INTERFACES AND TYPES
+// 🔧 INTERFACES
 interface FlowEditorProps {
   flowId: string;
   onOpenPlayground: () => void;
@@ -92,24 +60,34 @@ interface FlowEditorProps {
   onAddNodeReady?: (addNodeFunction: (type: string, name: string) => void) => void;
 }
 
+interface NodeData {
+  label: string;
+  name?: string;
+  [key: string]: any;
+}
+
 interface WorkflowData {
-  id?: number;
+  id?: string;
   name: string;
   description?: string;
-  definition: {
+  definition?: {
     nodes: Node[];
     edges: Edge[];
     viewport?: any;
   };
+  nodes?: any[];
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
 // 🎨 NODE TYPES REGISTRY
-const nodeTypes: Record<string, ComponentType<NodeProps>> = {
+const nodeTypes: NodeTypes = {
+  "model-node": ModelNode,
   openai: ModelNode,
   anthropic: AnthropicNode,
+  deepseek: DeepSeekNode,
+  ollama: OllamaNode,
   huggingface: HuggingFaceNode,
   "local-model": LocalModelNode,
   "text-input": InputNode,
@@ -133,34 +111,72 @@ const nodeTypes: Record<string, ComponentType<NodeProps>> = {
 };
 
 // 📊 NODE DATA FACTORY
-const getNodeData = (type: string, name: string, aiConfigs: AIConfig[] = []): NodeData => {
-  const nodeType = nodeTypes[type];
-  const baseData: FlowNodeData = { 
-    workflow: 0, // Will be set when creating node
-    node_type: type,
+const getNodeData = (type: string, name: string): NodeData => {
+  const baseData: NodeData = { 
+    label: name,
     name: name,
-    label: name, 
-    aiConfigs,
-    description: nodeType?.description || '',
-    config_schema: nodeType?.config_schema || {},
-    config: {}
+    type: type,
+    description: `${name} component`
   };
 
   switch (type) {
+    case 'model-node':
+      return { 
+        ...baseData, 
+        model: '', 
+        temperature: 0.7, 
+        systemMessage: 'You are a helpful assistant.',
+        provider: 'generic'
+      };
     case 'openai':
       return { 
         ...baseData, 
-        model: 'gpt-4o-mini', 
+        model: '', 
         temperature: 0.7, 
         systemMessage: 'You are a helpful assistant.',
         provider: 'openai'
-      } as AINodeData;
+      };
+    case 'anthropic':
+      return { 
+        ...baseData, 
+        model: '', 
+        temperature: 0.7, 
+        systemMessage: 'You are a helpful assistant.',
+        provider: 'anthropic'
+      };
+    case 'deepseek':
+      return { 
+        ...baseData, 
+        model: '', 
+        temperature: 0.7, 
+        systemMessage: 'You are a helpful assistant.',
+        provider: 'deepseek'
+      };
+    case 'ollama':
+      return { 
+        ...baseData, 
+        model: '', 
+        temperature: 0.7, 
+        systemMessage: 'You are a helpful assistant.',
+        provider: 'ollama'
+      };
+    case 'huggingface':
+      return { 
+        ...baseData, 
+        model: '', 
+        temperature: 0.7,
+        provider: 'huggingface'
+      };
+    case 'local-model':
+      return { ...baseData, model: "llama2", temperature: 0.7 };
     case 'text-input':
-      return { ...baseData, inputs: { text: "" } } as FlowNodeData;
+      return { ...baseData, inputs: { text: "" } };
+    case 'file-input':
+      return { ...baseData, acceptedTypes: ".txt,.csv,.json,.pdf" };
     case 'prompt-template':
-      return { ...baseData, template: "Write a response about {{topic}}" } as FlowNodeData;
+      return { ...baseData, template: "Write a response about {{topic}}" };
     case 'agent':
-      return { ...baseData, instructions: "You are a helpful assistant." } as FlowNodeData;
+      return { ...baseData, instructions: "You are a helpful assistant." };
     case 'api-input':
       return { 
         ...baseData, 
@@ -170,50 +186,31 @@ const getNodeData = (type: string, name: string, aiConfigs: AIConfig[] = []): No
         body: "", 
         autoFetch: false, 
         pollingInterval: 0 
-      } as FlowNodeData;
-    case 'anthropic':
-      return { 
-        ...baseData, 
-        model: 'claude-3-sonnet-20240229', 
-        temperature: 0.7, 
-        systemMessage: 'You are a helpful assistant.',
-        provider: 'anthropic'
-      } as AINodeData;
-    case 'huggingface':
-      return { 
-        ...baseData, 
-        model: 'gpt2', 
-        temperature: 0.7,
-        provider: 'huggingface'
-      } as AINodeData;
-    case 'local-model':
-      return { ...baseData, model: "llama2", temperature: 0.7 } as AINodeData;
-    case 'file-input':
-      return { ...baseData, acceptedTypes: ".txt,.csv,.json" } as FlowNodeData;
+      };
     case 'stream-output':
-      return { ...baseData, output: "" } as FlowNodeData;
+      return { ...baseData, output: "" };
     case 'file-output':
-      return { ...baseData, fileName: "output.txt" } as FlowNodeData;
+      return { ...baseData, fileName: "output.txt" };
     case 'few-shot':
-      return { ...baseData, examples: [] } as FlowNodeData;
+      return { ...baseData, examples: [] };
     case 'tool':
-      return { ...baseData, functionName: "" } as FlowNodeData;
+      return { ...baseData, functionName: "" };
     case 'multi-agent':
-      return { ...baseData, agents: [] } as FlowNodeData;
+      return { ...baseData, agents: [] };
     case 'conversation-memory':
-      return { ...baseData, windowSize: 5 } as FlowNodeData;
+      return { ...baseData, windowSize: 5 };
     case 'buffer-memory':
-      return { ...baseData, bufferSize: 10 } as FlowNodeData;
+      return { ...baseData, bufferSize: 10 };
     case 'sequential-chain':
-      return { ...baseData, chains: [] } as FlowNodeData;
+      return { ...baseData, chains: [] };
     case 'router-chain':
-      return { ...baseData, routes: [] } as FlowNodeData;
+      return { ...baseData, routes: [] };
     case 'vector-store':
-      return { ...baseData, vectorDB: "", dimension: 0 } as FlowNodeData;
+      return { ...baseData, vectorDB: "", dimension: 0 };
     case 'document-loader':
-      return { ...baseData, loaderType: "" } as FlowNodeData;
+      return { ...baseData, loaderType: "" };
     case 'text-splitter':
-      return { ...baseData, chunkSize: 1000, chunkOverlap: 200 } as FlowNodeData;
+      return { ...baseData, chunkSize: 1000, chunkOverlap: 200 };
     default:
       return baseData;
   }
@@ -227,24 +224,19 @@ const getInitialNodes = (flowId: string): Node[] => {
         id: "1",
         type: "text-input",
         position: { x: 250, y: 100 },
-        data: { label: "Chat Input", inputs: { text: "Hello" } },
+        data: getNodeData("text-input", "Chat Input"),
       },
       {
         id: "2",
-        type: "openai",
+        type: "anthropic",
         position: { x: 250, y: 250 },
-        data: {
-          label: "OpenAI",
-          model: "gpt-4o-mini",
-          temperature: 0.7,
-          systemMessage: "You are a helpful assistant.",
-        },
+        data: getNodeData("anthropic", "Anthropic"),
       },
       {
         id: "3",
         type: "text-output",
         position: { x: 250, y: 400 },
-        data: { label: "Chat Output" },
+        data: getNodeData("text-output", "Chat Output"),
       },
     ];
   }
@@ -255,25 +247,25 @@ const getInitialNodes = (flowId: string): Node[] => {
         id: "1",
         type: "text-input",
         position: { x: 100, y: 100 },
-        data: { label: "User Query", inputs: { text: "" } },
+        data: getNodeData("text-input", "User Query"),
       },
       {
         id: "2",
         type: "vector-store",
         position: { x: 300, y: 100 },
-        data: { label: "Vector Store", vectorDB: "pinecone", dimension: 1536 },
+        data: getNodeData("vector-store", "Vector Store"),
       },
       {
         id: "3",
         type: "openai",
         position: { x: 500, y: 100 },
-        data: { label: "OpenAI", model: "gpt-4o-mini", temperature: 0.7 },
+        data: getNodeData("openai", "OpenAI"),
       },
       {
         id: "4",
         type: "text-output",
         position: { x: 700, y: 100 },
-        data: { label: "Response" },
+        data: getNodeData("text-output", "Response"),
       },
     ];
   }
@@ -300,28 +292,6 @@ const getInitialEdges = (flowId: string): Edge[] => {
   return [];
 };
 
-// Add type conversion helper
-const convertWorkflowToWorkflowData = (workflow: any): WorkflowData => ({
-  id: workflow.id,
-  name: workflow.name,
-  description: workflow.description,
-  definition: workflow.config || { nodes: [], edges: [] },
-  is_active: workflow.is_active,
-  created_at: workflow.created_at,
-  updated_at: workflow.updated_at
-});
-
-// Add type conversion for AI configs
-const convertAIModelConfig = (config: AIModelConfig): AIConfig => ({
-  id: config.id,
-  name: config.name,
-  provider: config.provider,
-  model: config.model,
-  temperature: config.temperature,
-  systemMessage: config.systemMessage,
-  config: config.config
-});
-
 // 🚀 MAIN FLOW EDITOR COMPONENT
 export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAddNodeReady }: FlowEditorProps) {
   // 🔐 AUTHENTICATION & ROUTING
@@ -329,24 +299,17 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
   const router = useRouter();
   const { addNotification } = useNotifications();
 
-  // Add notification helper
-  const notify = useCallback((type: 'success' | 'error' | 'info' | 'warning', message: string) => {
-    addNotification({ type, message });
-  }, [addNotification]);
-
   // 📱 REACT FLOW STATE
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes] = useState<ReactFlowNode<NodeData>[]>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState(getInitialNodes(flowId));
+  const [edges, setEdges, onEdgesChange] = useEdgesState(getInitialEdges(flowId));
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
-  const [selectedNode, setSelectedNode] = useState<ReactFlowNode<NodeData> | null>(null);
-  const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isReactFlowLoaded, setIsReactFlowLoaded] = useState(false);
 
   // 🎯 BACKEND INTEGRATION STATE
   const [workflowData, setWorkflowData] = useState<WorkflowData | null>(null);
-  const [aiConfigs, setAiConfigs] = useState<AIConfig[]>([]);
-  const [backendNodes, setBackendNodes] = useState<any[]>([]);
+  const [aiConfigs, setAiConfigs] = useState<AIModelConfig[]>([]);
 
   // 📊 UI STATE
   const [loading, setLoading] = useState(false);
@@ -358,95 +321,12 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
   // 🔧 TRACKING STATE
   const [newlyAddedNodes, setNewlyAddedNodes] = useState<Set<string>>(new Set());
   const defaultViewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
-  const [reactFlowUtils, setReactFlowUtils] = useState<{
-    onNodesChange?: any;
-    onEdgesChange?: any;
-    addEdge?: any;
-  }>({});
-
-  // Add new state for node types and providers
-  const [nodeTypes, setNodeTypes] = useState<NodeRegistry>({});
-  const [aiProviders, setAIProviders] = useState<AIProvider[]>([]);
-  const [loadingNodeTypes, setLoadingNodeTypes] = useState(false);
-  const [loadingProviders, setLoadingProviders] = useState(false);
-
-  // Add new state variables
-  const [workflowNodes, setWorkflowNodes] = useState<WorkflowNode[]>([]);
-  const [workflowTasks, setWorkflowTasks] = useState<WorkflowTask[]>([]);
-  const [loadingTasks, setLoadingTasks] = useState(false);
 
   // 🚀 INITIALIZATION
   useEffect(() => {
-    let isMounted = true;
-
-    const initializeReactFlow = async () => {
-      try {
-        const reactflow = await import("reactflow");
-        if (!isMounted) return;
-
-        setReactFlowUtils({
-          onNodesChange: reactflow.applyNodeChanges,
-          onEdgesChange: reactflow.applyEdgeChanges,
-          addEdge: reactflow.addEdge,
-        });
-
-        setIsReactFlowLoaded(true);
-        console.log("✅ ReactFlow initialized");
-      } catch (error) {
-        console.error("❌ Failed to initialize ReactFlow:", error);
-      }
-    };
-
-    initializeReactFlow();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // 🎯 LOAD INITIAL DATA FROM BACKEND
-  useEffect(() => {
-    if (isReactFlowLoaded) {
-      loadInitialData();
-    }
-  }, [isReactFlowLoaded, flowId]);
-
-  // Add new functions to fetch node types and providers
-  const loadNodeTypes = async () => {
-    setLoadingNodeTypes(true);
-    try {
-      const response = await apiClient.get<NodeType[]>('/workflows/node-types/');
-      // Convert array to record
-      const nodeTypesRecord = response.data.reduce((acc: Record<string, NodeType>, nodeType: NodeType) => {
-        acc[nodeType.id] = {
-          ...nodeType,
-          component: nodeTypes[nodeType.id]?.component || ModelNode // Default to ModelNode
-        };
-        return acc;
-      }, {});
-      setNodeTypes(nodeTypesRecord);
-      console.log('✅ Node types loaded:', Object.keys(nodeTypesRecord).length);
-    } catch (error) {
-      console.error('❌ Failed to load node types:', error);
-      notify('error', 'Failed to load node types');
-    } finally {
-      setLoadingNodeTypes(false);
-    }
-  };
-
-  const loadAIProviders = async () => {
-    setLoadingProviders(true);
-    try {
-      const response = await apiClient.get<AIProvider[]>('/ai/providers/');
-      setAIProviders(response.data);
-      console.log('✅ AI providers loaded:', response.data.length);
-    } catch (error) {
-      console.error('❌ Failed to load AI providers:', error);
-      notify('error', 'Failed to load AI providers');
-    } finally {
-      setLoadingProviders(false);
-    }
-  };
+    setIsReactFlowLoaded(true);
+    loadInitialData();
+  }, [flowId]);
 
   /**
    * 📊 Load workflow and AI configurations from backend
@@ -456,47 +336,45 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
     console.log("🔄 Loading initial data for flowId:", flowId);
 
     try {
-      // Load node types and providers
-      const [nodeTypesResponse, providersResponse] = await Promise.all([
-        nodeService.getNodeTypes(),
-        aiProviderService.getProviders()
-      ]);
+      // Load AI configs
+      try {
+        const aiConfigsResponse = await aiService.listConfigs();
+        setAiConfigs(aiConfigsResponse);
+        console.log("✅ AI configs loaded:", aiConfigsResponse.length);
+      } catch (error) {
+        console.error("❌ Failed to load AI configs:", error);
+        setAiConfigs([]);
+      }
 
-      // Set node types
-      const nodeTypesRecord = nodeTypesResponse.reduce((acc: NodeRegistry, nodeType: NodeType) => {
-        acc[nodeType.id] = {
-          ...nodeType,
-          component: nodeTypes[nodeType.id]?.component || ModelNode,
-          type: nodeType.id,
-          draggable: true,
-          selectable: true,
-          connectable: true,
-          deletable: true
-        };
-        return acc;
-      }, {});
-      setNodeTypes(nodeTypesRecord);
-
-      // Set AI providers
-      setAIProviders(providersResponse);
-
-      // Load workflow nodes if we have a workflow ID
-      if (flowId && flowId !== "new") {
+      // Load workflow if not new
+      if (flowId && flowId !== "new" && !flowId.startsWith("flow-")) {
         try {
-          const workflowNodes = await nodeService.getWorkflowNodes(flowId);
-          const flowNodes = workflowNodes.map(convertApiNodeToFlowNode);
-          setNodes(flowNodes);
-          console.log("✅ Workflow nodes loaded:", flowNodes.length);
+          const workflow = await workflowService.getWorkflow(flowId);
+          setWorkflowData(workflow);
+          
+          // Load workflow nodes if they exist
+          if (workflow.nodes && workflow.nodes.length > 0) {
+            // Convert backend nodes to ReactFlow nodes
+            const reactFlowNodes = workflow.nodes.map((node: any) => ({
+              id: node.id || `node-${Date.now()}`,
+              type: node.node_type || 'text-input',
+              position: { x: node.position_x || 0, y: node.position_y || 0 },
+              data: getNodeData(node.node_type || 'text-input', node.name || 'Node')
+            }));
+            setNodes(reactFlowNodes);
+          }
+          
+          console.log("✅ Workflow loaded:", workflow);
+          addNotification({ type: "success", message: "Flow editor loaded successfully!" });
         } catch (error) {
-          console.error("❌ Failed to load workflow nodes:", error);
-          notify("error", "Failed to load workflow nodes");
+          console.error("❌ Failed to load workflow:", error);
         }
       }
 
-      notify("success", "Initial data loaded successfully!");
+      addNotification({ type: "success", message: "Flow editor loaded successfully!" });
     } catch (error) {
       console.error("❌ Failed to load initial data:", error);
-      notify("error", "Failed to load initial data");
+      addNotification({ type: "error", message: "Failed to load workflow data" });
     } finally {
       setLoading(false);
     }
@@ -513,22 +391,9 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
     }
   }, [reactFlowInstance]);
 
-  // 🎯 AUTO-SAVE FUNCTIONALITY
-  useEffect(() => {
-    if (autoSaveEnabled && workflowData?.id && reactFlowInstance) {
-      const autoSaveTimer = setTimeout(() => {
-        handleSaveFlowSilently();
-      }, 2000); // Auto-save after 2 seconds of inactivity
-
-      return () => clearTimeout(autoSaveTimer);
-    }
-  }, [nodes, edges, autoSaveEnabled, workflowData?.id]);
-
-  // 🔧 NODE CHANGE HANDLER WITH BACKEND SYNC
+  // 🔧 NODE CHANGE HANDLER
   const onNodesChangeHandler = useCallback(
     (changes: NodeChange[]) => {
-      if (!reactFlowUtils.onNodesChange) return;
-
       // Handle node selection
       const selectChange = changes.find(
         (change) => change.type === "select" && change.selected === true
@@ -538,7 +403,6 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
         const node = nodes.find((n) => n.id === nodeId);
         if (node) {
           setSelectedNode(node);
-          setSelectedNodeData(node.data);
         }
       }
 
@@ -562,37 +426,22 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
             }
           }
         }
-
-        // 🎯 BACKEND SYNC: Update node position in backend
-        if (change.type === "position" && !("dragging" in change) && "id" in change && change.position) {
-          const nodeId = change.id;
-          const backendNode = backendNodes.find(bn => bn.id.toString() === nodeId);
-          
-          if (backendNode && workflowData?.id) {
-            updateNodeInBackend(backendNode.id, {
-              position_x: change.position.x,
-              position_y: change.position.y,
-            });
-          }
-        }
       }
 
-      setNodes((nds) => reactFlowUtils.onNodesChange(changes, nds));
+      onNodesChange(changes);
     },
-    [newlyAddedNodes, nodes, reactFlowInstance, reactFlowUtils.onNodesChange, backendNodes, workflowData?.id]
+    [newlyAddedNodes, nodes, reactFlowInstance, onNodesChange]
   );
 
-  // 🔗 CONNECTION HANDLER WITH BACKEND SYNC
+  // 🔗 CONNECTION HANDLER
   const onConnect = useCallback(
     (params: Connection) => {
-      if (!reactFlowUtils.addEdge) return;
-
       const edgeId = `e${params.source}-${params.target}`;
 
       // Check if connection already exists
       const edgeExists = edges.some((edge) => edge.id === edgeId);
       if (edgeExists) {
-        notify("warning", "Connection already exists");
+        addNotification({ type: "warning", message: "Connection already exists" });
         return;
       }
 
@@ -601,7 +450,7 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
 
       if (sourceNode && targetNode) {
         if (params.source === params.target) {
-          notify("warning", "Cannot connect a node to itself");
+          addNotification({ type: "warning", message: "Cannot connect a node to itself" });
           return;
         }
 
@@ -630,7 +479,7 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
       }
 
       setEdges((eds) =>
-        reactFlowUtils.addEdge(
+        addEdge(
           {
             ...params,
             id: edgeId,
@@ -645,9 +494,9 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
         )
       );
 
-      notify("success", "Connection created");
+      addNotification({ type: "success", message: "Connection created" });
     },
-    [edges, nodes, reactFlowInstance, reactFlowUtils.addEdge, addNotification]
+    [edges, nodes, reactFlowInstance, setEdges, addNotification]
   );
 
   // 🎯 DRAG AND DROP HANDLERS
@@ -679,7 +528,7 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
           id: nodeId,
           type,
           position,
-          data: getNodeData(type, name, aiConfigs),
+          data: getNodeData(type, name),
         };
 
         setNodes((nds) => nds.concat(newNode));
@@ -687,18 +536,13 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
         // Track newly added node
         setNewlyAddedNodes((prev) => new Set(prev).add(nodeId));
 
-        // 🎯 CREATE NODE IN BACKEND
-        if (workflowData?.id) {
-          createNodeInBackend(newNode, workflowData.id);
-        }
-
-        notify("success", `Added ${name} to the flow`);
+        addNotification({ type: "success", message: `Added ${name} to the flow` });
       } catch (error) {
         console.error("❌ Error adding node:", error);
-        notify("error", "Failed to add component to the flow");
+        addNotification({ type: "error", message: "Failed to add component to the flow" });
       }
     },
-    [reactFlowInstance, setNodes, addNotification, aiConfigs, workflowData?.id]
+    [reactFlowInstance, setNodes, addNotification]
   );
 
   // 🎯 PROGRAMMATIC NODE ADDITION
@@ -727,87 +571,20 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
           id: nodeId,
           type,
           position: newPosition!,
-          data: getNodeData(type, name, aiConfigs),
+          data: getNodeData(type, name),
         };
 
         setNodes((nds) => nds.concat(newNode));
         setNewlyAddedNodes((prev) => new Set(prev).add(nodeId));
 
-        // 🎯 CREATE NODE IN BACKEND
-        if (workflowData?.id) {
-          createNodeInBackend(newNode, workflowData.id);
-        }
-
-        notify("success", `Added ${name} to the flow`);
+        addNotification({ type: "success", message: `Added ${name} to the flow` });
       } catch (error) {
         console.error("❌ Error in addNodeToFlow:", error);
-        notify("error", "Failed to add component to the flow");
+        addNotification({ type: "error", message: "Failed to add component to the flow" });
       }
     },
-    [reactFlowInstance, setNodes, addNotification, aiConfigs, workflowData?.id]
+    [reactFlowInstance, setNodes, addNotification]
   );
-
-  // 🎯 BACKEND API FUNCTIONS
-
-  /**
-   * 📝 Create node in backend
-   */
-  const createNodeInBackend = async (node: ReactFlowNode<NodeData>, workflowId: number) => {
-    try {
-      const nodeData: NodeData = {
-        workflow: workflowId,
-        node_type: node.type || "default",
-        name: node.data.label || `Node ${node.id}`,
-        config: {
-          position: node.position,
-          data: node.data,
-          type: node.type,
-        },
-        label: node.data.label,
-        description: node.data.description,
-        config_schema: node.data.config_schema,
-        aiConfigs: node.data.aiConfigs
-      };
-
-      const createdNode = await workflowService.createNode(nodeData);
-      console.log("✅ Node created in backend:", createdNode);
-
-      // Update backend nodes tracking
-      setBackendNodes(prev => [...prev, createdNode]);
-
-      // Update frontend node with backend ID
-      setNodes((nds) =>
-        nds.map((n) =>
-          n.id === node.id
-            ? { ...n, data: { ...n.data, backendId: createdNode.id } }
-            : n
-        )
-      );
-    } catch (error) {
-      console.error("❌ Failed to create node in backend:", error);
-      notify("error", "Failed to save node to backend");
-    }
-  };
-
-  /**
-   * 📝 Update node in backend
-   */
-  const updateNodeInBackend = async (backendNodeId: number, updates: Partial<NodeData>) => {
-    try {
-      const updatedNode = await workflowService.updateNode(backendNodeId.toString(), {
-        ...updates,
-        workflow: Number(updates.workflow) // Ensure workflow is a number
-      });
-      console.log("✅ Node updated in backend:", updatedNode);
-
-      // Update backend nodes tracking
-      setBackendNodes(prev => 
-        prev.map(node => node.id === backendNodeId ? updatedNode : node)
-      );
-    } catch (error) {
-      console.error("❌ Failed to update node in backend:", error);
-    }
-  };
 
   /**
    * 💾 Save workflow to backend
@@ -816,7 +593,7 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
     setSaving(true);
 
     if (!reactFlowInstance) {
-      notify("error", "ReactFlow instance not ready.");
+      addNotification({ type: "error", message: "ReactFlow instance not ready." });
       setSaving(false);
       return;
     }
@@ -847,73 +624,89 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
           definition: workflowDefinition,
           is_active: true,
         });
-        const workflowData = convertWorkflowToWorkflowData(savedWorkflow);
-        setWorkflowData(workflowData);
-        console.log("✅ New workflow created:", workflowData);
+        setWorkflowData(savedWorkflow);
+        console.log("✅ New workflow created:", savedWorkflow);
         
         // Update URL to include workflow ID
         router.push(`/dashboard/flow/${savedWorkflow.id}`);
       }
 
       setLastSaved(new Date());
-      notify("success", "Workflow saved successfully!");
+      addNotification({ type: "success", message: "Workflow saved successfully!" });
     } catch (error: any) {
       console.error("❌ Failed to save workflow:", error);
-      notify("error", `Failed to save workflow: ${error.message}`);
+      addNotification({ type: "error", message: `Failed to save workflow: ${error.message}` });
     } finally {
       setSaving(false);
     }
   };
 
   /**
-   * 💾 Silent auto-save
-   */
-  const handleSaveFlowSilently = async () => {
-    if (!reactFlowInstance || !workflowData?.id) return;
-
-    try {
-      const flow = reactFlowInstance.toObject();
-      const workflowDefinition = {
-        nodes: flow.nodes,
-        edges: flow.edges,
-        viewport: flow.viewport,
-      };
-
-      await workflowService.updateWorkflow(
-        workflowData.id.toString(),
-        { definition: workflowDefinition }
-      );
-      
-      setLastSaved(new Date());
-      console.log("✅ Auto-saved workflow");
-    } catch (error) {
-      console.error("❌ Auto-save failed:", error);
-    }
-  };
-
-  /**
-   * ▶️ Execute workflow
+   * ▶️ Execute workflow with real AI processing
    */
   const handleExecuteFlow = async () => {
-    if (!workflowData?.id) {
-      notify("error", "Please save the workflow before executing.");
-      return;
-    }
-
-    setExecuting(true);
     try {
-      // First, save current state
-      await handleSaveFlowSilently();
-
-      // Execute workflow
-      const result = await workflowService.executeWorkflow(workflowData.id.toString());
-      console.log("✅ Workflow execution result:", result);
+      setExecuting(true);
       
-      notify("success", "Workflow executed successfully!");
-      onOpenPlayground(); // Open playground to show results
-    } catch (error: any) {
-      console.error("❌ Workflow execution failed:", error);
-      notify("error", `Execution failed: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
+      console.log('🚀 Starting workflow execution...');
+      console.log('📊 Nodes:', nodes.length, 'Edges:', edges.length);
+      console.log('🔍 Node details:', nodes.map(n => ({ id: n.id, type: n.type, data: n.data })));
+      
+      // Check if we have the required nodes
+      const hasInput = nodes.some(n => n.type === 'text-input');
+      const hasAI = nodes.some(n => n.type === 'anthropic' || n.type === 'openai');
+      const hasOutput = nodes.some(n => n.type === 'text-output');
+      
+      console.log('🔍 Node validation:', { hasInput, hasAI, hasOutput });
+      
+      if (!hasInput) {
+        throw new Error('No input node found. Please add a Chat Input node.');
+      }
+      
+      if (!hasAI) {
+        throw new Error('No AI node found. Please add an AI model node.');
+      }
+      
+      if (!hasOutput) {
+        throw new Error('No output node found. Please add a Chat Output node.');
+      }
+      
+      // Import and use the real execution engine
+      console.log('📦 Importing WorkflowExecutionEngine...');
+      const { WorkflowExecutionEngine } = await import('@/lib/api/workflow-execution');
+      console.log('✅ WorkflowExecutionEngine imported successfully');
+      
+      const engine = new WorkflowExecutionEngine(nodes, edges);
+      console.log('🏗️ Execution engine created');
+      
+      // Execute the workflow
+      console.log('▶️ Starting execution...');
+      const result = await engine.execute();
+      console.log('🎯 Execution result:', result);
+      
+      if (result.success) {
+        addNotification({
+          type: "success",
+          message: `✅ Workflow executed successfully! Processed ${result.executionOrder.length} nodes.`,
+        });
+        
+        console.log('🎉 Execution completed successfully:', result);
+        
+      } else {
+        addNotification({
+          type: "error",
+          message: `❌ Execution failed: ${result.errors.join(', ')}`,
+        });
+        
+        console.error('💥 Execution failed:', result.errors);
+      }
+      
+    } catch (error) {
+      console.error('🚨 Execution error:', error);
+      addNotification({
+        type: "error",
+        message: `💥 Execution error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      });
     } finally {
       setExecuting(false);
     }
@@ -927,39 +720,17 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
     const selectedEdges = edges.filter((edge) => edge.selected);
 
     if (selectedNodes.length === 0 && selectedEdges.length === 0) {
-      notify("warning", "No items selected for deletion");
+      addNotification({ type: "warning", message: "No items selected for deletion" });
       return;
-    }
-
-    // Delete selected nodes from backend
-    for (const node of selectedNodes) {
-      const backendNode = backendNodes.find(bn => bn.id.toString() === node.id);
-      if (backendNode) {
-        try {
-          await workflowService.deleteNode(backendNode.id.toString());
-          console.log("✅ Node deleted from backend:", backendNode.id);
-        } catch (error) {
-          console.error("❌ Failed to delete node from backend:", error);
-        }
-      }
     }
 
     // Remove from frontend
     setNodes((nodes) => nodes.filter((node) => !node.selected));
     setEdges((edges) => edges.filter((edge) => !edge.selected));
 
-    // Update backend nodes tracking
-    const deletedNodeIds = selectedNodes.map(n => {
-      const backendNode = backendNodes.find(bn => bn.id.toString() === n.id);
-      return backendNode?.id;
-    }).filter(Boolean);
-
-    setBackendNodes(prev => prev.filter(node => !deletedNodeIds.includes(node.id)));
-
     setSelectedNode(null);
-    setSelectedNodeData(null);
 
-    notify("success", "Selected items have been removed");
+    addNotification({ type: "success", message: "Selected items have been removed" });
   };
 
   /**
@@ -969,39 +740,19 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === nodeId) {
-          const updatedNode = {
+          return {
             ...node,
             data: {
               ...node.data,
               ...newData,
             },
           };
-
-          // Update backend node if it exists
-          const backendNode = backendNodes.find(bn => bn.id.toString() === nodeId);
-          if (backendNode && workflowData?.id) {
-            updateNodeInBackend(backendNode.id, {
-              config: {
-                ...backendNode.config,
-                data: updatedNode.data,
-              },
-            });
-          }
-
-          return updatedNode;
         }
         return node;
       })
     );
 
-    if (nodeId === selectedNode?.id) {
-      setSelectedNodeData({
-        ...selectedNodeData,
-        ...newData,
-      });
-    }
-
-    notify("info", "Node updated successfully");
+    addNotification({ type: "info", message: "Node updated successfully" });
   };
 
   /**
@@ -1011,93 +762,69 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
     console.log("🔍 FLOW DEBUG INFO:");
     console.log("Current Nodes:", nodes);
     console.log("Current Edges:", edges);
-    console.log("Backend Nodes:", backendNodes);
     console.log("Workflow Data:", workflowData);
     console.log("AI Configs:", aiConfigs);
-
-    const orphanedNodes = nodes.filter(
-      (node) => !edges.some((edge) => edge.source === node.id || edge.target === node.id)
-    );
-
-    const danglingEdges = edges.filter(
-      (edge) => !nodes.some((node) => node.id === edge.source) || !nodes.some((node) => node.id === edge.target)
-    );
-
-    const circularPaths = findCircularPaths(nodes, edges);
-
-    if (orphanedNodes.length > 0) {
-      console.warn("⚠️ Orphaned nodes detected:", orphanedNodes);
-    }
-
-    if (danglingEdges.length > 0) {
-      console.warn("⚠️ Dangling edges detected:", danglingEdges);
-    }
-
-    if (circularPaths.length > 0) {
-      console.warn("⚠️ Circular dependencies detected:", circularPaths);
-    }
 
     const debugInfo = `
 🔍 Flow Debug Report:
 📊 ${nodes.length} nodes, ${edges.length} edges
-🔗 ${backendNodes.length} backend nodes
-${orphanedNodes.length > 0 ? `⚠️ ${orphanedNodes.length} orphaned nodes` : "✅ No orphaned nodes"}
-${danglingEdges.length > 0 ? `⚠️ ${danglingEdges.length} dangling edges` : "✅ No dangling edges"}
-${circularPaths.length > 0 ? `⚠️ ${circularPaths.length} circular paths` : "✅ No circular paths"}
+🤖 ${aiConfigs.length} AI configs loaded
 💾 Last saved: ${lastSaved ? lastSaved.toLocaleTimeString() : "Never"}
     `.trim();
 
-    notify("info", debugInfo);
-  }, [nodes, edges, backendNodes, workflowData, aiConfigs, lastSaved, notify]);
+    addNotification({ type: "info", message: debugInfo });
+  }, [nodes, edges, workflowData, aiConfigs, lastSaved, addNotification]);
 
   /**
-   * 🔄 Find circular paths in workflow
+   * 🧪 Simple test execution for debugging
    */
-  const findCircularPaths = (nodes: ReactFlowNode<NodeData>[], edges: Edge[]): string[][] => {
-    const adjacencyList: Record<string, string[]> = {};
-
-    nodes.forEach((node) => {
-      adjacencyList[node.id] = [];
-    });
-
-    edges.forEach((edge) => {
-      if (adjacencyList[edge.source]) {
-        adjacencyList[edge.source].push(edge.target);
-      }
-    });
-
-    const visited: Record<string, boolean> = {};
-    const recStack: Record<string, boolean> = {};
-    const circularPaths: string[][] = [];
-
-    const dfs = (nodeId: string, path: string[] = []) => {
-      if (!visited[nodeId]) {
-        visited[nodeId] = true;
-        recStack[nodeId] = true;
-        path.push(nodeId);
-
-        for (const neighbor of adjacencyList[nodeId] || []) {
-          if (!visited[neighbor] && dfs(neighbor, [...path])) {
-            return true;
-          } else if (recStack[neighbor]) {
-            const cycleStart = path.indexOf(neighbor);
-            circularPaths.push(path.slice(cycleStart));
-            return true;
-          }
-        }
-      }
-
-      recStack[nodeId] = false;
-      return false;
-    };
-
-    for (const node of nodes) {
-      if (!visited[node.id]) {
-        dfs(node.id);
-      }
+  const testExecution = async () => {
+    console.log('🧪 Testing execution system...');
+    
+    // Test 1: Check if nodes have data
+    console.log('📊 Current nodes:', nodes);
+    
+    // Test 2: Check if API is reachable
+    try {
+      console.log('🔗 Testing API connection...');
+      const response = await fetch('http://localhost:8000/api/ai/aimodelconfig/');
+      console.log('📡 API Response:', response.status, response.ok);
+    } catch (error) {
+      console.error('🚨 API Connection failed:', error);
     }
-
-    return circularPaths;
+    
+    // Test 3: Test execution engine import
+    try {
+      console.log('📦 Testing execution engine import...');
+      const { WorkflowExecutionEngine } = await import('@/lib/api/workflow-execution');
+      console.log('✅ Execution engine imported successfully');
+      
+      // Create a simple test
+      const testNodes = [
+        { id: '1', type: 'text-input', data: { text: 'What is Capital of India' } },
+        { id: '2', type: 'anthropic', data: { model: 'claude-3-5-sonnet-20241022' } },
+        { id: '3', type: 'text-output', data: {} }
+      ];
+      const testEdges = [
+        { id: 'e1-2', source: '1', target: '2' },
+        { id: 'e2-3', source: '2', target: '3' }
+      ];
+      
+      const engine = new WorkflowExecutionEngine(testNodes as any, testEdges as any);
+      console.log('🏗️ Test engine created successfully');
+      
+      addNotification({
+        type: "info",
+        message: "🧪 Debug test completed - check console for details"
+      });
+      
+    } catch (error) {
+      console.error('💥 Test failed:', error);
+      addNotification({
+        type: "error",
+        message: `🧪 Debug test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
+    }
   };
 
   // 🎯 EXPOSE ADD NODE FUNCTION
@@ -1264,7 +991,7 @@ ${circularPaths.length > 0 ? `⚠️ ${circularPaths.length} circular paths` : "
             size="sm"
             className="bg-black/50 border-white/10 text-white hover:bg-white/10 shadow-lg"
             onClick={handleExecuteFlow}
-            disabled={executing || !workflowData?.id}
+            disabled={executing}
           >
             {executing ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1288,7 +1015,10 @@ ${circularPaths.length > 0 ? `⚠️ ${circularPaths.length} circular paths` : "
             variant="outline"
             size="sm"
             className="bg-black/50 border-white/10 text-white hover:bg-white/10 shadow-lg"
-            onClick={debugFlow}
+            onClick={() => {
+              debugFlow();
+              testExecution();
+            }}
           >
             <Bug className="mr-2 h-4 w-4" />
             Debug
@@ -1322,10 +1052,9 @@ ${circularPaths.length > 0 ? `⚠️ ${circularPaths.length} circular paths` : "
       {selectedNode && (
         <NodePropertiesPanel
           nodeId={selectedNode.id}
-          nodeData={selectedNodeData}
+          nodeData={selectedNode.data}
           onClose={() => {
             setSelectedNode(null);
-            setSelectedNodeData(null);
           }}
           onUpdate={handleNodeDataUpdate}
         />

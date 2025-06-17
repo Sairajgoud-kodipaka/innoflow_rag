@@ -40,9 +40,10 @@ export function InputNode({ data, isConnectable }: { data: any; isConnectable?: 
     const newText = e.target.value
     setInputText(newText)
     
-    // Update the node data to persist changes
-    if (data && data.onInputChange) {
-      data.onInputChange('text', newText)
+    // Update the node data directly for execution engine access
+    if (data) {
+      data.text = newText
+      data.inputs = { text: newText }
     }
   }
 
@@ -89,15 +90,6 @@ export function InputNode({ data, isConnectable }: { data: any; isConnectable?: 
           📝
         </div>
         <span>{data?.label || "Chat Input"}</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="ml-auto p-1 w-7 h-7 text-blue-400 hover:bg-blue-500/10"
-          onClick={() => { data.onRun ? data.onRun() : alert('Run Input!') }}
-          aria-label="Run Input"
-        >
-          <Play className="w-4 h-4" />
-        </Button>
       </div>
       
       <div className="p-3 space-y-3">

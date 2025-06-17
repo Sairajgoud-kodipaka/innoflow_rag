@@ -1,19 +1,48 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Handle, Position } from "reactflow"
 import { Slider } from "@/components/ui/slider"
 import { ChevronDown, Play } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { getAIModelsByProvider, AIModelConfig } from "@/lib/api/ai"
 
 export function ModelNode({ data, isConnectable }: { data: any; isConnectable?: boolean }) {
   const [settings, setSettings] = useState({
-    model: data.model || "gpt-4o-mini",
+    model: data.model || "",
     temperature: data.temperature || 0.7,
     maxTokens: data.maxTokens || 1024,
     topP: data.topP || 1.0
   })
+
+  const [availableModels, setAvailableModels] = useState<AIModelConfig[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadAvailableModels()
+  }, [])
+
+  const loadAvailableModels = async () => {
+    try {
+      setLoading(true)
+      const modelsByProvider = await getAIModelsByProvider()
+      
+      // Get all models from all providers for this generic model node
+      const allModels = Object.values(modelsByProvider).flat()
+      setAvailableModels(allModels)
+      
+      // Set default model if none selected
+      if (!settings.model && allModels.length > 0) {
+        const defaultModel = allModels.find(m => m.provider === 'OPENAI') || allModels[0]
+        setSettings(prev => ({ ...prev, model: defaultModel.model_name }))
+      }
+    } catch (error) {
+      console.error('Failed to load AI models:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const updateSetting = (key: string, value: any) => {
     setSettings(prev => ({ ...prev, [key]: value }))
@@ -22,11 +51,24 @@ export function ModelNode({ data, isConnectable }: { data: any; isConnectable?: 
     }
   }
 
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case 'OPENAI': return '🤖'
+      case 'ANTHROPIC': return '🧠'
+      case 'DEEPSEEK': return '🔍'
+      case 'OLLAMA': return '🦙'
+      case 'HUGGINGFACE': return '🤗'
+      default: return '🗄️'
+    }
+  }
+
+  const selectedModel = availableModels.find(m => m.model_name === settings.model)
+
   return (
     <div className="w-64 rounded-md border border-green-500/40 bg-black/80 shadow-md backdrop-blur-sm">
       <div className="border-b border-teal-500/30 bg-teal-500/10 px-3 py-2 text-sm font-medium text-teal-500 flex items-center gap-2">
-        🗄️
-        <span>{data.label || "OpenAI"}</span>
+        {selectedModel ? getProviderIcon(selectedModel.provider) : '🗄️'}
+        <span>{data.label || "AI Model"}</span>
         <Button
           variant="ghost"
           size="sm"
@@ -41,6 +83,11 @@ export function ModelNode({ data, isConnectable }: { data: any; isConnectable?: 
       <div className="p-3 space-y-2">
         <div>
           <label className="text-xs text-white/70 block mb-1">Model</label>
+          {loading ? (
+            <div className="h-8 bg-black/30 border border-white/10 rounded animate-pulse flex items-center px-2">
+              <span className="text-xs text-white/50">Loading models...</span>
+            </div>
+          ) : (
           <Select 
             value={settings.model} 
             onValueChange={(value) => updateSetting("model", value)}
@@ -49,17 +96,23 @@ export function ModelNode({ data, isConnectable }: { data: any; isConnectable?: 
               <SelectValue placeholder="Select model" />
             </SelectTrigger>
             <SelectContent className="bg-black/90 border-white/10 text-white max-h-48">
-              <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-              <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-              <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-              <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
-              <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
-              <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
-              <SelectItem value="llama-3-70b">Llama 3 70B</SelectItem>
-              <SelectItem value="llama-3-8b">Llama 3 8B</SelectItem>
-              <SelectItem value="mistral-medium">Mistral Medium</SelectItem>
+                {availableModels.map((model) => (
+                  <SelectItem key={model.id} value={model.model_name}>
+                    <div className="flex items-center gap-2">
+                      <span>{getProviderIcon(model.provider)}</span>
+                      <span>{model.model_name}</span>
+                      <span className="text-xs text-white/50">({model.provider})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+                {availableModels.length === 0 && (
+                  <SelectItem value="no-models" disabled>
+                    No models available
+                  </SelectItem>
+                )}
             </SelectContent>
           </Select>
+          )}
         </div>
 
         <div>
@@ -91,6 +144,17 @@ export function ModelNode({ data, isConnectable }: { data: any; isConnectable?: 
             className="[&>span]:bg-teal-500"
           />
         </div>
+
+        {selectedModel && (
+          <div className="pt-1 border-t border-white/10">
+            <div className="text-xs text-white/50">
+              <div>Provider: {selectedModel.provider}</div>
+              {selectedModel.name !== selectedModel.model_name && (
+                <div>Config: {selectedModel.name}</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <Handle

@@ -1,33 +1,51 @@
 import apiClient from './client';
-import { ApiResponse } from '../types/api';
-import { AIProvider, AIModel, AIConfig } from '../types/flow';
+
+export interface AIProvider {
+  id: string;
+  name: string;
+  models: AIModel[];
+}
+
+export interface AIModel {
+  id: string;
+  name: string;
+  description?: string;
+}
 
 export interface AIModelConfig {
-  id?: string;
+  id: number;
   name: string;
-  provider: string;
+  provider: 'OPENAI' | 'ANTHROPIC' | 'DEEPSEEK' | 'OLLAMA' | 'HUGGINGFACE';
   model_name: string;
-  api_key: string;
-  temperature?: number;
-  max_tokens?: number;
-  top_p?: number;
+  is_active: boolean;
+  api_key?: string;
   base_url?: string;
-  created_at?: string;
-  updated_at?: string;
+  parameters: Record<string, any>;
+  model_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AIModelsByProvider {
+  [provider: string]: AIModelConfig[];
 }
 
 export interface ModelComparison {
-  id?: string;
-  config1: string;  // ID of first model config
-  config2: string;  // ID of second model config
+  id: number;
   prompt: string;
-  results?: {
-    config1_response: string;
-    config2_response: string;
-    comparison: string;
-  };
-  created_at?: string;
-  updated_at?: string;
+  compared_models: number[];
+  created_at: string;
+}
+
+export interface ComparisonResult {
+  comparison_id: number;
+  results: any;
+}
+
+export interface TaskStatus {
+  task_id: string;
+  status: string;
+  result: any;
 }
 
 interface AIResponse<T> {
@@ -36,139 +54,223 @@ interface AIResponse<T> {
 }
 
 class AIService {
-  // Get all available AI providers
+  /**
+   * Get available AI providers
+   */
   async getProviders(): Promise<AIProvider[]> {
     try {
-      const response = await apiClient.get<ApiResponse<AIProvider[]>>('/ai/providers/');
-      return response.data.data;
+      // This would be implemented when backend has a providers endpoint
+      // For now, return static list based on available configurations
+      const configs = await this.listConfigs();
+      const providerGroups = configs.reduce((acc, config) => {
+        if (!acc[config.provider]) {
+          acc[config.provider] = [];
+        }
+        acc[config.provider].push({
+          id: config.id.toString(),
+          name: config.model_name,
+          description: config.name
+        });
+        return acc;
+      }, {} as Record<string, AIModel[]>);
+
+      return Object.entries(providerGroups).map(([key, models]) => ({
+        id: key,
+        name: key,
+        models
+      }));
     } catch (error) {
       console.error('Failed to fetch AI providers:', error);
-      throw new Error('Failed to fetch AI providers');
+      throw error;
     }
   }
 
-  // Get models for a specific provider
+  /**
+   * Get models for a specific provider
+   */
   async getProviderModels(providerId: string): Promise<AIModel[]> {
     try {
-      const response = await apiClient.get<ApiResponse<AIModel[]>>(`/ai/providers/${providerId}/models/`);
-      return response.data.data;
+      const configs = await this.listConfigs();
+      return configs
+        .filter(config => config.provider === providerId && config.is_active)
+        .map(config => ({
+          id: config.id.toString(),
+          name: config.model_name,
+          description: config.name
+        }));
     } catch (error) {
-      console.error('Failed to fetch provider models:', error);
-      throw new Error('Failed to fetch provider models');
+      console.error(`Failed to fetch models for provider ${providerId}:`, error);
+      throw error;
     }
   }
 
-  // Create a new AI configuration
-  async createConfig(config: Partial<AIConfig>): Promise<AIConfig> {
+  /**
+   * List all AI model configurations
+   */
+  async listConfigs(): Promise<AIModelConfig[]> {
     try {
-      const response = await apiClient.post<ApiResponse<AIConfig>>('/ai/configs/', config);
-      return response.data.data;
+      const response = await apiClient.get<{ results?: AIModelConfig[] } | AIModelConfig[]>('/api/ai/aimodelconfig/');
+      // Handle Django REST framework pagination
+      return (response.data as any).results || response.data as AIModelConfig[];
+    } catch (error) {
+      console.error('Failed to fetch AI configs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific AI model configuration
+   */
+  async getConfig(id: string): Promise<AIModelConfig> {
+    try {
+      const response = await apiClient.get<AIModelConfig>(`/api/ai/aimodelconfig/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to fetch AI config ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new AI model configuration
+   */
+  async createConfig(config: Partial<AIModelConfig>): Promise<AIModelConfig> {
+    try {
+      const response = await apiClient.post<AIModelConfig>('/api/ai/aimodelconfig/', config);
+      return response.data;
     } catch (error) {
       console.error('Failed to create AI config:', error);
-      throw new Error('Failed to create AI config');
+      throw error;
     }
   }
 
-  // Update an existing AI configuration
-  async updateConfig(configId: string, config: Partial<AIConfig>): Promise<AIConfig> {
-    try {
-      const response = await apiClient.put<ApiResponse<AIConfig>>(`/ai/configs/${configId}/`, config);
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to update AI config:', error);
-      throw new Error('Failed to update AI config');
-    }
-  }
-
-  // Delete an AI configuration
-  async deleteConfig(configId: string): Promise<void> {
-    try {
-      await apiClient.delete(`/ai/configs/${configId}/`);
-    } catch (error) {
-      console.error('Failed to delete AI config:', error);
-      throw new Error('Failed to delete AI config');
-    }
-  }
-
-  // List all AI configurations
-  async listConfigs(): Promise<AIConfig[]> {
-    try {
-      const response = await apiClient.get<ApiResponse<AIConfig[]>>('/ai/configs/');
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to list AI configs:', error);
-      throw new Error('Failed to list AI configs');
-    }
-  }
-
-  // Test a provider configuration
-  async testProviderConfig(providerId: string, config: Record<string, any>): Promise<boolean> {
-    try {
-      const response = await apiClient.post<ApiResponse<{ success: boolean }>>(
-        `/ai/providers/${providerId}/test/`,
-        config
-      );
-      return response.data.data.success;
-    } catch (error) {
-      console.error('Failed to test provider config:', error);
-      throw new Error('Failed to test provider config');
-    }
-  }
-
-  // AI Model Configuration
-  async getConfig(id: string): Promise<AIModelConfig> {
-    const response = await apiClient.get<AIResponse<AIModelConfig>>(`/ai/aimodelconfig/${id}/`);
-    return response.data.data;
-  }
-
+  /**
+   * Update an AI model configuration
+   */
   async updateConfig(id: string, config: Partial<AIModelConfig>): Promise<AIModelConfig> {
-    const response = await apiClient.patch<AIResponse<AIModelConfig>>(`/ai/aimodelconfig/${id}/`, config);
-    return response.data.data;
+    try {
+      const response = await apiClient.put<AIModelConfig>(`/api/ai/aimodelconfig/${id}/`, config);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to update AI config ${id}:`, error);
+      throw error;
+    }
   }
 
+  /**
+   * Delete an AI model configuration
+   */
   async deleteConfig(id: string): Promise<void> {
-    await apiClient.delete(`/ai/aimodelconfig/${id}/`);
+    try {
+      await apiClient.delete(`/api/ai/aimodelconfig/${id}/`);
+    } catch (error) {
+      console.error(`Failed to delete AI config ${id}:`, error);
+      throw error;
+    }
   }
 
-  // Model Comparison
-  async listComparisons(): Promise<ModelComparison[]> {
-    const response = await apiClient.get<AIResponse<ModelComparison[]>>('/ai/modelcomparison/');
-    return response.data.data;
+  /**
+   * Test an AI model configuration
+   */
+  async testConfig(id: string): Promise<{ status: string; message: string }> {
+    try {
+      const response = await apiClient.post<{ status: string; message: string }>(`/api/ai/aimodelconfig/${id}/test-config/`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to test AI config ${id}:`, error);
+      throw error;
+    }
   }
 
-  async createComparison(comparison: Omit<ModelComparison, 'id' | 'results' | 'created_at' | 'updated_at'>): Promise<ModelComparison> {
-    const response = await apiClient.post<AIResponse<ModelComparison>>('/ai/modelcomparison/', comparison);
-    return response.data.data;
+  /**
+   * Compare multiple models with a prompt
+   */
+  async compareModels(prompt: string, modelIds: number[]): Promise<{ comparison_id: number; status: string }> {
+    try {
+      const response = await apiClient.post<{ comparison_id: number; status: string }>('/api/ai/modelcomparison/compare-models/', {
+        prompt,
+        models: modelIds
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to compare models:', error);
+      throw error;
+    }
   }
 
-  async getComparison(id: string): Promise<ModelComparison> {
-    const response = await apiClient.get<AIResponse<ModelComparison>>(`/ai/modelcomparison/${id}/`);
-    return response.data.data;
+  /**
+   * Get comparison results
+   */
+  async getComparisonResults(comparisonId: string): Promise<ComparisonResult> {
+    try {
+      const response = await apiClient.get<ComparisonResult>(`/api/ai/modelcomparison/${comparisonId}/results/`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to get comparison results for ${comparisonId}:`, error);
+      throw error;
+    }
   }
 
-  async updateComparison(id: string, comparison: Partial<ModelComparison>): Promise<ModelComparison> {
-    const response = await apiClient.patch<AIResponse<ModelComparison>>(`/ai/modelcomparison/${id}/`, comparison);
-    return response.data.data;
+  /**
+   * Get task status
+   */
+  async getTaskStatus(taskId: string): Promise<TaskStatus> {
+    try {
+      const response = await apiClient.get<TaskStatus>(`/api/ai/taskstatus/status/${taskId}/`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to get task status for ${taskId}:`, error);
+      throw error;
+    }
   }
 
-  async deleteComparison(id: string): Promise<void> {
-    await apiClient.delete(`/ai/modelcomparison/${id}/`);
+  /**
+   * Get task result
+   */
+  async getTaskResult(taskId: string): Promise<TaskStatus> {
+    try {
+      const response = await apiClient.get<TaskStatus>(`/api/ai/taskstatus/result/${taskId}/`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to get task result for ${taskId}:`, error);
+      throw error;
+    }
   }
 
-  async getComparisonResults(id: string): Promise<ModelComparison['results']> {
-    const response = await apiClient.get<AIResponse<ModelComparison['results']>>(`/ai/modelcomparison/${id}/results/`);
-    return response.data.data;
-  }
-
-  // Direct Model Comparison
-  async compareModels(comparisonData: {
-    config1: string;
-    config2: string;
-    prompt: string;
-  }): Promise<ModelComparison> {
-    const response = await apiClient.post<AIResponse<ModelComparison>>('/ai/modelcomparison/compare-models/', comparisonData);
-    return response.data.data;
+  /**
+   * Execute AI model with prompt (generic execution)
+   */
+  async executeModel(configId: number, prompt: string, parameters?: Record<string, any>): Promise<{ task_id: string }> {
+    try {
+      // This would need to be implemented on the backend
+      // For now, we'll use the comparison endpoint as a workaround
+      const result = await this.compareModels(prompt, [configId]);
+      return { task_id: result.comparison_id.toString() };
+    } catch (error) {
+      console.error('Failed to execute AI model:', error);
+      throw error;
+    }
   }
 }
 
-export const aiService = new AIService(); 
+export const aiService = new AIService();
+export { AIService };
+
+// Helper function to get models grouped by provider
+export const getAIModelsByProvider = async (): Promise<AIModelsByProvider> => {
+  try {
+    const configs = await aiService.listConfigs();
+    const activeConfigs = configs.filter(config => config.is_active);
+    
+    return activeConfigs.reduce((acc, config) => {
+      if (!acc[config.provider]) {
+        acc[config.provider] = [];
+      }
+      acc[config.provider].push(config);
+      return acc;
+    }, {} as AIModelsByProvider);
+  } catch (error) {
+    console.error('Error fetching AI models by provider:', error);
+    throw error;
+  }
+}; 

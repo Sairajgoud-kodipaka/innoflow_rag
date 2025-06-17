@@ -94,25 +94,65 @@ export function ComponentSidebar() {
     },
     {
       id: "models",
-      name: "Models",
+      name: "AI Models",
       components: [
+        {
+          id: "model-node",
+          name: "AI Model",
+          description: "Generic AI model with all providers",
+          icon: (
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-teal-500/20 text-xs text-teal-500">
+              🗄️
+            </div>
+          ),
+        },
         {
           id: "openai",
           name: "OpenAI",
-          description: "Generate text using OpenAI LLMs",
+          description: "GPT-4, GPT-3.5 and other OpenAI models",
+          icon: (
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-green-500/20 text-xs text-green-500">
+              🤖
+            </div>
+          ),
+        },
+        {
+          id: "anthropic",
+          name: "Anthropic",
+          description: "Claude models from Anthropic",
           icon: (
             <div className="flex h-6 w-6 items-center justify-center rounded bg-teal-500/20 text-xs text-teal-500">
-              AI
+              🧠
+            </div>
+          ),
+        },
+        {
+          id: "deepseek",
+          name: "DeepSeek",
+          description: "DeepSeek reasoning models",
+          icon: (
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-500/20 text-xs text-blue-500">
+              🔍
+            </div>
+          ),
+        },
+        {
+          id: "ollama",
+          name: "Ollama",
+          description: "Local AI models via Ollama",
+          icon: (
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-orange-500/20 text-xs text-orange-500">
+              🦙
             </div>
           ),
         },
         {
           id: "huggingface",
           name: "HuggingFace",
-          description: "Use models from HuggingFace",
+          description: "Open source models from HuggingFace",
           icon: (
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-cyan-500/20 text-xs text-cyan-500">
-              HF
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-yellow-500/20 text-xs text-yellow-500">
+              🤗
             </div>
           ),
         },

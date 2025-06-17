@@ -10,7 +10,7 @@ class OpenAIProvider(AIProvider):
     def generate_completion(self, prompt: str, **kwargs):
         try:
             client = OpenAI(api_key=self.api_key)
-            response = client.responses.create(
+            response = client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": prompt}],
                 **kwargs
