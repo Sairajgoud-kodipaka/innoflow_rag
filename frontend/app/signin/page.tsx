@@ -1,4 +1,4 @@
-import { SigninForm } from "@/components/auth/signin-form"
+import { NextAuthSigninForm } from "@/components/auth/nextauth-signin-form"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -21,7 +21,7 @@ export default function SigninPage() {
               </Link>
             </div>
             <h1 className="mb-6 text-3xl font-bold text-white">Sign In</h1>
-            <SigninForm />
+            <NextAuthSigninForm />
           </div>
           <div className="flex flex-col justify-center">
             <h2 className="mb-8 text-3xl font-bold text-white">Welcome Back to InnoFlow</h2>

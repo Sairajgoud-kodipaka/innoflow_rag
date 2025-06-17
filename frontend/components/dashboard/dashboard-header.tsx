@@ -54,7 +54,7 @@ export function DashboardHeader({ showAutoSave = false }: { showAutoSave?: boole
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchResults, setSearchResults] = useState<typeof mockProjects>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
-
+  
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setSearchResults([])
@@ -322,13 +322,13 @@ export function DashboardHeader({ showAutoSave = false }: { showAutoSave?: boole
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/profile">
                   <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                <span>Profile</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

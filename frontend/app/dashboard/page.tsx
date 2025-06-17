@@ -40,7 +40,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {!isMobile && <DashboardSidebar />}
-      <DashboardHeader />
+        <DashboardHeader />
       
       <main className={`pt-16 ${!isMobile ? "ml-64" : ""} transition-all duration-300`}>
         <div className="p-6 space-y-8">
@@ -53,7 +53,7 @@ export default function DashboardPage() {
               Continue building amazing AI workflows and automations.
             </p>
           </div>
-
+          
           {/* Analytics */}
           <AnalyticsCharts />
 
@@ -62,8 +62,8 @@ export default function DashboardPage() {
 
           {/* Templates */}
           <TemplateGallery />
-        </div>
-      </main>
+          </div>
+        </main>
     </div>
   )
 }
