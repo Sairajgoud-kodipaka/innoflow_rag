@@ -105,7 +105,7 @@ export function OutputNode({ data, isConnectable }: { data: any; isConnectable?:
       <div className="p-3 space-y-3">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs text-purple-400">Output Preview</label>
+          <label className="text-xs text-purple-400">Output Preview</label>
             <div className={`flex items-center gap-1 text-xs ${getStatusColor()}`}>
               <span>{getStatusIcon()}</span>
               <span className="capitalize">{executionStatus}</span>
@@ -124,14 +124,14 @@ export function OutputNode({ data, isConnectable }: { data: any; isConnectable?:
           <select 
             className="w-full rounded border border-white/10 bg-white/5 px-3 py-1 text-sm text-white/70 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
             defaultValue="text"
-          >
+            >
             <option value="text">Text</option>
             <option value="json">JSON</option>
             <option value="markdown">Markdown</option>
             <option value="html">HTML</option>
           </select>
-        </div>
-
+            </div>
+            
         {lastExecuted && (
           <div className="text-xs text-white/50 text-center">
             Last updated: {lastExecuted}
@@ -139,13 +139,13 @@ export function OutputNode({ data, isConnectable }: { data: any; isConnectable?:
         )}
       </div>
 
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="in"
+        <Handle
+          type="target"
+          position={Position.Top}
+          id="in"
         isConnectable={isConnectable !== false}
         className="w-3 h-3 bg-purple-500 border-2 border-black"
-      />
+        />
     </div>
   )
 }

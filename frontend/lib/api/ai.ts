@@ -253,7 +253,7 @@ class AIService {
   }
 }
 
-export const aiService = new AIService();
+export const aiService = new AIService(); 
 export { AIService };
 
 // Helper function to get models grouped by provider

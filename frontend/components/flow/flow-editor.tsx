@@ -113,7 +113,7 @@ const nodeTypes: NodeTypes = {
 // 📊 NODE DATA FACTORY
 const getNodeData = (type: string, name: string): NodeData => {
   const baseData: NodeData = { 
-    label: name,
+    label: name, 
     name: name,
     type: type,
     description: `${name} component`
@@ -324,8 +324,8 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
 
   // 🚀 INITIALIZATION
   useEffect(() => {
-    setIsReactFlowLoaded(true);
-    loadInitialData();
+        setIsReactFlowLoaded(true);
+      loadInitialData();
   }, [flowId]);
 
   /**
@@ -581,7 +581,7 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
       } catch (error) {
         console.error("❌ Error in addNodeToFlow:", error);
         addNotification({ type: "error", message: "Failed to add component to the flow" });
-      }
+    }
     },
     [reactFlowInstance, setNodes, addNotification]
   );
@@ -665,7 +665,7 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
       
       if (!hasAI) {
         throw new Error('No AI node found. Please add an AI model node.');
-      }
+    }
       
       if (!hasOutput) {
         throw new Error('No output node found. Please add a Chat Output node.');
@@ -678,7 +678,7 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
       
       const engine = new WorkflowExecutionEngine(nodes, edges);
       console.log('🏗️ Execution engine created');
-      
+
       // Execute the workflow
       console.log('▶️ Starting execution...');
       const result = await engine.execute();
