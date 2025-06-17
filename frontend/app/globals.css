@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142.1 76.2% 36.3%;
+    --radius: 0.5rem;
+
+    /* Sidebar variables */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 142.1 70.6% 45.3%;
+    --primary-foreground: 144.9 80.4% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142.4 71.8% 29.2%;
+
+    /* Sidebar variables */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+  }
+
+  .animate-slow-gradient {
+    background-size: 200% 200%;
+    animation: slow-gradient 60s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-slow-gradient:hover {
+    background-size: 220% 220%;
+  }
+
+ react-flow__controls {
+  filter: none !important;
+  background: #000000 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px;
+}
+
+.react-flow__controls-button {
+  background: grey !important;
+  border-bottom: 1px solid rgba(184, 181, 181, 0.1) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(237, 232, 232, 0.992) !important;
+}
+
+.react-flow__minimap {
+  background-color: #000000 !important;
+  filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px;
+}
+.react-flow__edge.animated path {
+  animation: flowPulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.3;
+    filter: blur(8px);
+  }
+  50% {
+    opacity: 0.5;
+    filter: blur(12px);
+  }
+  100% {
+    opacity: 0.3;
+    filter: blur(8px);
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes slow-gradient {
+  0% {
+    background-position: 0% 50%;
+    background-size: 200% 200%;
+  }
+  50% {
+    background-position: 100% 50%;
+    background-size: 220% 220%;
+  }
+  100% {
+    background-position: 0% 50%;
+    background-size: 200% 200%;
+  }
+}
+
+@keyframes flowPulse {
+  0% {
+    stroke-opacity: 0.6;
+    stroke-width: 2;
+  }
+  50% {
+    stroke-opacity: 1;
+    stroke-width: 3;
+  }
+  100% {
+    stroke-opacity: 0.6;
+    stroke-width: 2;
+  }
+}
+
+@keyframes gradientGlowPurple {
+  0% {
+    background-position: 0% 50%;
+    filter: drop-shadow(0 0 20px rgba(192, 132, 252, 0.15));
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: drop-shadow(0 0 40px rgba(192, 132, 252, 0.3));
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: drop-shadow(0 0 20px rgba(192, 132, 252, 0.15));
+  }
+}
+
+/* Background for DragDrop Section */
+.dragdrop-bg {
+  background: linear-gradient(130deg, #4c1d95, #6b21a8, #7c3aed);
+  background-size: 300% 300%;
+  animation: gradientGlowPurple 8s ease infinite;
+}
+
+/* Background for FlowAPI Section */
+.flowapi-bg {
+  background: linear-gradient(130deg, #6b21a8, #7c3aed, #a78bfa);
+  background-size: 300% 300%;
+  animation: gradientGlowPurple 8s ease infinite;
+}
+
+.glow-gradient-text {
+  background: linear-gradient(130deg, #a855f7, #9333ea, #7c3aed);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: gradientGlowPurple 8s ease infinite;
+  filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.3));
+}
+
+.dragdrop-bg {
+  position: relative;
+  background: linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(30, 30, 50, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.5s ease;
+}
+
+/* Enhance the scrolling experience */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure the sticky container has proper z-indexing */
+.sticky {
+  z-index: 10;
+}
+
+.sticky > div > div {
+  animation: cardGlow 4s infinite;
+}
+
+.integration-hover-glow:hover {
+  background: linear-gradient(130deg, #6b21a8, #7c3aed, #a78bfa);
+  background-size: 300% 300%;
+  animation: gradientGlowPurple 8s ease infinite;
+}
