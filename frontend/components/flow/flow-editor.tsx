@@ -32,6 +32,7 @@ import { TextSplitterNode } from "@/components/flow/nodes/text-splitter-node";
 import APIInputNode from "@/components/flow/nodes/API-input-node";
 import { DeepSeekNode } from "./nodes/deepseek-node";
 import { OllamaNode } from "./nodes/ollama-node";
+import { GeminiNode } from "./nodes/gemini-node";
 
 // ReactFlow imports
 import type { Node, Edge, Connection, NodeTypes, NodeChange, EdgeChange } from "reactflow";
@@ -89,6 +90,7 @@ const nodeTypes: NodeTypes = {
   deepseek: DeepSeekNode,
   ollama: OllamaNode,
   huggingface: HuggingFaceNode,
+  gemini: GeminiNode,
   "local-model": LocalModelNode,
   "text-input": InputNode,
   "file-input": FileInputNode,
@@ -166,6 +168,14 @@ const getNodeData = (type: string, name: string): NodeData => {
         model: '', 
         temperature: 0.7,
         provider: 'huggingface'
+      };
+    case 'gemini':
+      return { 
+        ...baseData, 
+        model: 'gemini-1.5-pro', 
+        temperature: 0.7, 
+        systemMessage: 'You are a helpful assistant.',
+        provider: 'gemini'
       };
     case 'local-model':
       return { ...baseData, model: "llama2", temperature: 0.7 };

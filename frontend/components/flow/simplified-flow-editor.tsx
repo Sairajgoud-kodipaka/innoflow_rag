@@ -108,6 +108,8 @@ const getNodeColor = (type: string) => {
       return "border-yellow-500/30 bg-yellow-500/10 text-yellow-500"
     case "agent":
       return "border-rose-500/30 bg-rose-500/10 text-rose-500"
+    case "gemini":
+      return "border-gray-500/30 bg-gray-500/10 text-gray-500"
     default:
       return "border-gray-500/30 bg-gray-500/10 text-gray-500"
   }
@@ -126,6 +128,8 @@ const getNodeIcon = (type: string) => {
       return "P"
     case "agent":
       return "A"
+    case "gemini":
+      return "💎"
     default:
       return "?"
   }
@@ -280,6 +284,7 @@ export function SimplifiedFlowEditor({ flowId }: { flowId: string }) {
                             {node.type === "text-output" && "Output node for text"}
                             {node.type === "prompt-template" && "Template for prompts"}
                             {node.type === "agent" && "Agent with tools"}
+                            {node.type === "gemini" && "Gemini language model"}
                           </div>
                         </div>
                       </div>

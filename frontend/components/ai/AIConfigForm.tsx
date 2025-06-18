@@ -1,14 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { aiService } from '@/lib/api/ai';
+import { aiService, AIModelConfig } from '@/lib/api/ai';
 
 interface AIConfigFormProps {
   onSuccess?: () => void;
 }
 
+type AIProvider = 'OPENAI' | 'ANTHROPIC' | 'DEEPSEEK' | 'OLLAMA' | 'HUGGINGFACE' | 'GEMINI';
+
+interface ConfigFormData {
+  name: string;
+  provider: AIProvider;
+  model_name: string;
+  api_key: string;
+  base_url: string;
+  parameters: Record<string, any>;
+}
+
 export default function AIConfigForm({ onSuccess }: AIConfigFormProps) {
-  const [config, setConfig] = useState({
+  const [config, setConfig] = useState<ConfigFormData>({
     name: '',
     provider: 'OPENAI',
     model_name: '',
@@ -25,7 +36,19 @@ export default function AIConfigForm({ onSuccess }: AIConfigFormProps) {
     setError('');
 
     try {
-      await aiService.createConfig(config);
+      // Create the config with proper typing
+      const configData: Partial<AIModelConfig> = {
+        name: config.name,
+        provider: config.provider,
+        model_name: config.model_name,
+        api_key: config.api_key,
+        base_url: config.base_url || undefined,
+        parameters: config.parameters,
+        is_active: true,
+        model_type: 'chat'
+      };
+      
+      await aiService.createConfig(configData);
       setConfig({
         name: '',
         provider: 'OPENAI',
@@ -65,7 +88,7 @@ export default function AIConfigForm({ onSuccess }: AIConfigFormProps) {
         <label className="block text-sm font-medium text-gray-700">AI Provider</label>
         <select
           value={config.provider}
-          onChange={(e) => setConfig({ ...config, provider: e.target.value })}
+          onChange={(e) => setConfig({ ...config, provider: e.target.value as AIProvider })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           required
         >
@@ -74,6 +97,7 @@ export default function AIConfigForm({ onSuccess }: AIConfigFormProps) {
           <option value="DEEPSEEK">DeepSeek</option>
           <option value="OLLAMA">Ollama</option>
           <option value="HUGGINGFACE">Hugging Face</option>
+          <option value="GEMINI">Gemini</option>
         </select>
       </div>
 
@@ -85,7 +109,8 @@ export default function AIConfigForm({ onSuccess }: AIConfigFormProps) {
           onChange={(e) => setConfig({ ...config, model_name: e.target.value })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           required
-          placeholder={config.provider === 'OPENAI' ? 'e.g., gpt-3.5-turbo' : 'Enter model name'}
+          placeholder={config.provider === 'OPENAI' ? 'e.g., gpt-3.5-turbo' : 
+                      config.provider === 'GEMINI' ? 'e.g., gemini-1.5-pro' : 'Enter model name'}
         />
       </div>
 
@@ -96,20 +121,21 @@ export default function AIConfigForm({ onSuccess }: AIConfigFormProps) {
           value={config.api_key}
           onChange={(e) => setConfig({ ...config, api_key: e.target.value })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          required={['OPENAI', 'ANTHROPIC', 'DEEPSEEK'].includes(config.provider)}
+          required={['OPENAI', 'ANTHROPIC', 'DEEPSEEK', 'GEMINI'].includes(config.provider)}
         />
         <p className="mt-1 text-sm text-gray-500">
           {config.provider === 'OPENAI' && 'Get your API key from '}
           {config.provider === 'ANTHROPIC' && 'Get your API key from '}
           {config.provider === 'DEEPSEEK' && 'Get your API key from '}
-          {['OPENAI', 'ANTHROPIC', 'DEEPSEEK'].includes(config.provider) && (
+          {config.provider === 'GEMINI' && 'Get your API key from '}
+          {['OPENAI', 'ANTHROPIC', 'DEEPSEEK', 'GEMINI'].includes(config.provider) && (
             <a
-              href={`https://${config.provider.toLowerCase()}.com`}
+              href={config.provider === 'GEMINI' ? 'https://makersuite.google.com/app/apikey' : `https://${config.provider.toLowerCase()}.com`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-800"
             >
-              {config.provider.toLowerCase()}.com
+              {config.provider === 'GEMINI' ? 'Google AI Studio' : `${config.provider.toLowerCase()}.com`}
             </a>
           )}
         </p>

@@ -15,7 +15,7 @@ export interface AIModel {
 export interface AIModelConfig {
   id: number;
   name: string;
-  provider: 'OPENAI' | 'ANTHROPIC' | 'DEEPSEEK' | 'OLLAMA' | 'HUGGINGFACE';
+  provider: 'OPENAI' | 'ANTHROPIC' | 'DEEPSEEK' | 'OLLAMA' | 'HUGGINGFACE' | 'GEMINI';
   model_name: string;
   is_active: boolean;
   api_key?: string;
@@ -229,6 +229,7 @@ class AIService {
    */
   async getTaskResult(taskId: string): Promise<TaskStatus> {
     try {
+      // Try to get the result from the Celery task status endpoint
       const response = await apiClient.get<TaskStatus>(`/api/ai/taskstatus/result/${taskId}/`);
       return response.data;
     } catch (error) {
@@ -238,14 +239,16 @@ class AIService {
   }
 
   /**
-   * Execute AI model with prompt (generic execution)
+   * Execute AI model with prompt (synchronous execution for playground)
    */
-  async executeModel(configId: number, prompt: string, parameters?: Record<string, any>): Promise<{ task_id: string }> {
+  async executeModel(configId: number, prompt: string, parameters?: Record<string, any>): Promise<any> {
     try {
-      // This would need to be implemented on the backend
-      // For now, we'll use the comparison endpoint as a workaround
-      const result = await this.compareModels(prompt, [configId]);
-      return { task_id: result.comparison_id.toString() };
+      // Use the synchronous execute endpoint for immediate response
+      const response = await apiClient.post(`/api/ai/aimodelconfig/${configId}/execute/`, {
+        prompt,
+        parameters: parameters || {}
+      });
+      return response.data; // Returns the complete result immediately
     } catch (error) {
       console.error('Failed to execute AI model:', error);
       throw error;

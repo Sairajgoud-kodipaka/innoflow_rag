@@ -133,6 +133,73 @@ export function NodePropertiesPanel({ nodeId, nodeData, onClose, onUpdate }: Nod
           </div>
         )
 
+      case "gemini":
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label>Model</Label>
+              <Select defaultValue="gemini-1.5-pro">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gemini-1.5-pro">gemini-1.5-pro</SelectItem>
+                  <SelectItem value="gemini-1.5-flash">gemini-1.5-flash</SelectItem>
+                  <SelectItem value="gemini-1.0-pro">gemini-1.0-pro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Temperature: {data.temperature || 0.7}</Label>
+              <Slider
+                value={[data.temperature || 0.7]}
+                onValueChange={(value) => handleChange("temperature", value[0])}
+                max={1}
+                min={0}
+                step={0.1}
+                className="mt-2"
+              />
+            </div>
+            
+            <div>
+              <Label>Max Tokens</Label>
+              <Input type="number" defaultValue="1000" />
+            </div>
+            
+            <div>
+              <Label>Top P</Label>
+              <Slider
+                defaultValue={[0.8]}
+                max={1}
+                min={0}
+                step={0.1}
+                className="mt-2"
+              />
+            </div>
+            
+            <div>
+              <Label>Top K</Label>
+              <Slider
+                defaultValue={[10]}
+                max={40}
+                min={1}
+                step={1}
+                className="mt-2"
+              />
+            </div>
+            
+            <div>
+              <Label>System Message</Label>
+              <Textarea
+                placeholder="You are a helpful AI assistant..."
+                defaultValue="You are a helpful AI assistant."
+                rows={3}
+              />
+            </div>
+          </div>
+        )
+
       default:
         return <p className="text-white/50 text-sm">No editable properties available for this node type.</p>
     }

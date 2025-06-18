@@ -36,6 +36,10 @@ import { TextSplitterNode } from "@/components/flow/nodes/text-splitter-node"
 
 const nodeTypes: NodeTypes = {
   openai: ModelNode,
+  anthropic: ModelNode,
+  deepseek: ModelNode,
+  huggingface: ModelNode,
+  gemini: ModelNode,
   "text-input": InputNode,
   "text-output": OutputNode,
   agent: AgentNode,
@@ -96,11 +100,11 @@ const getInitialNodes = (flowId: string): Node[] => {
       },
       {
         id: "3",
-        type: "openai",
+        type: "gemini",
         position: { x: 400, y: 200 },
         data: {
-          label: "OpenAI",
-          model: "gpt-4o-mini",
+          label: "Gemini",
+          model: "gemini-1.5-pro",
           temperature: 0.3,
         },
       },
@@ -608,7 +612,9 @@ export default function ReactFlowCanvas({ flowId, onSelectNode, onOpenPlayground
           position,
           data: {
             label: name,
-            model: type === "openai" ? "gpt-4o-mini" : undefined,
+            model: type === "openai" ? "gpt-4o-mini" : 
+             type === "gemini" ? "gemini-1.5-pro" : 
+                   type === "gemini" ? "gemini-1.5-pro" : undefined,
             inputs: type === "text-input" ? { text: "" } : undefined,
             template: type === "prompt-template" ? "Write a response about {{topic}}" : undefined,
             instructions: type === "agent" ? "You are a helpful assistant." : undefined,
@@ -699,6 +705,8 @@ export default function ReactFlowCanvas({ flowId, onSelectNode, onOpenPlayground
                 return "rgba(245, 158, 11, 0.6)"
               case "agent":
                 return "rgba(239, 68, 68, 0.6)"
+              case "gemini":
+                return "💎 Gemini language model"
               default:
                 return "rgba(255, 255, 255, 0.2)"
             }

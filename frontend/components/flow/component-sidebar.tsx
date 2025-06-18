@@ -156,6 +156,16 @@ export function ComponentSidebar() {
             </div>
           ),
         },
+        {
+          id: "gemini",
+          name: "Gemini",
+          description: "Google's Gemini AI models",
+          icon: (
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-purple-500/20 text-xs text-purple-500">
+              💎
+            </div>
+          ),
+        },
       ],
     },
     {

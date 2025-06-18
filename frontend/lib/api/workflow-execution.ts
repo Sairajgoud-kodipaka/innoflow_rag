@@ -123,8 +123,12 @@ export class WorkflowExecutionEngine {
           output = await this.executeOllamaNode(node, context);
           break;
           
-        case 'huggingface':
-          output = await this.executeHuggingFaceNode(node, context);
+              case 'huggingface':
+        output = await this.executeHuggingFaceNode(node, context);
+        break;
+        
+              case 'gemini':
+          output = await this.executeGeminiNode(node, context);
           break;
           
         case 'output':
@@ -398,6 +402,47 @@ export class WorkflowExecutionEngine {
       content: intelligentResponse,
       model: modelName,
       provider: 'HUGGINGFACE',
+      timestamp: new Date().toISOString(),
+      fallback: true
+    };
+  }
+
+  /**
+   * Execute Gemini node
+   */
+  private async executeGeminiNode(node: Node, context: ExecutionContext): Promise<any> {
+    const nodeData = node.data || {};
+    const inputText = this.getInputFromPreviousNodes(node.id, context);
+    
+    const modelName = nodeData.model || 'gemini-1.5-pro';
+    
+    try {
+      // Try to use backend AI integration if available
+      const response = await this.executeAIModel('GEMINI', modelName, inputText, nodeData);
+      
+      if (response) {
+        return {
+          type: 'ai_response',
+          content: response.content,
+          model: modelName,
+          provider: 'GEMINI',
+          timestamp: new Date().toISOString(),
+          fallback: false
+        };
+      }
+      
+    } catch (error) {
+      console.error('🚨 Gemini execution error:', error);
+    }
+    
+    // Fallback to intelligent response
+    const intelligentResponse = this.generateIntelligentResponse(inputText);
+    
+    return {
+      type: 'ai_response',
+      content: intelligentResponse,
+      model: modelName,
+      provider: 'GEMINI',
       timestamp: new Date().toISOString(),
       fallback: true
     };

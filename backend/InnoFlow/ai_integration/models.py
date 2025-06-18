@@ -8,6 +8,7 @@ class AIModelConfig(models.Model):
         ('DEEPSEEK', 'DeepSeek'),
         ('OLLAMA', 'Ollama'),
         ('HUGGINGFACE', 'Hugging Face'),
+        ('GEMINI', 'Gemini'),
     ]
     
     name = models.CharField(max_length=100)
@@ -29,7 +30,7 @@ class AIModelConfig(models.Model):
         verbose_name_plural = "AI Model Configurations"
     
     def clean(self):
-        if self.provider in ['OPENAI', 'ANTHROPIC', 'DEEPSEEK'] and not self.api_key:
+        if self.provider in ['OPENAI', 'ANTHROPIC', 'DEEPSEEK', 'GEMINI'] and not self.api_key:
             raise ValidationError(f"API key is required for {self.get_provider_display()} models")
 
 class ModelComparison(models.Model):

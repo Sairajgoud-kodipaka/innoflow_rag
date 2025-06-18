@@ -119,6 +119,12 @@ export function FlowSidebar({ onAddComponent }: FlowSidebarProps) {
           icon: "HF",
         },
         {
+          id: "gemini",
+          name: "Gemini",
+          description: "Google's Gemini AI models",
+          icon: "G",
+        },
+        {
           id: "local-model",
           name: "Local Model",
           description: "Run models locally with Ollama",
