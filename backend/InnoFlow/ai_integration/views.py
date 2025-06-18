@@ -21,7 +21,7 @@ class IsAuthenticatedOrDev(IsAuthenticated):
     Custom permission that allows authenticated users or temporary dev authentication
     """
     def has_permission(self, request, view):
-        # For now, allow all requests to debug the model loading issue
+        # Temporarily allow all requests for demo purposes
         return True
 
 class TaskStatusViewSet(viewsets.ViewSet):

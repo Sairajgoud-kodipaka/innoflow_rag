@@ -414,6 +414,10 @@ export class WorkflowExecutionEngine {
     const nodeData = node.data || {};
     const inputText = this.getInputFromPreviousNodes(node.id, context);
     
+    if (!inputText) {
+      throw new Error('No input text received from previous nodes');
+    }
+    
     const modelName = nodeData.model || 'gemini-1.5-pro';
     
     try {
@@ -453,6 +457,8 @@ export class WorkflowExecutionEngine {
    */
   private async executeAIModel(provider: string, modelName: string, prompt: string, nodeData: any): Promise<{ content: string } | null> {
     try {
+      console.log(`🚀 Executing AI model: ${provider}:${modelName}`);
+      
       // First, try to find an existing AI model configuration
       const configsResponse = await authenticatedApiClient.get('/api/ai/aimodelconfig/');
       const configs = configsResponse.data;
@@ -465,32 +471,49 @@ export class WorkflowExecutionEngine {
       );
       
       if (!matchingConfig) {
-        console.log(`No active AI model config found for ${provider}:${modelName}`);
+        console.log(`❌ No active AI model config found for ${provider}:${modelName}`);
+        
+        // Try to find any active config for the provider as fallback
+        const providerConfig = configs.find((config: any) => 
+          config.provider === provider && config.is_active
+        );
+        
+        if (providerConfig) {
+          console.log(`🔄 Using fallback config: ${providerConfig.name} (ID: ${providerConfig.id})`);
+          
+          // Use direct execution endpoint for immediate response
+          const response = await authenticatedApiClient.post(`/api/ai/aimodelconfig/${providerConfig.id}/execute/`, {
+            prompt: prompt,
+            parameters: nodeData.parameters || {}
+          });
+          
+          if (response.data?.response) {
+            console.log(`✅ AI model executed successfully with fallback config`);
+            return { content: response.data.response };
+          }
+        }
+        
         return null;
       }
       
-      // Use the model comparison API to execute the AI model
-      const comparisonResponse = await authenticatedApiClient.post('/api/ai/modelcomparison/compare-models/', {
+      console.log(`✅ Found matching config: ${matchingConfig.name} (ID: ${matchingConfig.id})`);
+      
+      // Use direct execution endpoint for immediate response
+      const response = await authenticatedApiClient.post(`/api/ai/aimodelconfig/${matchingConfig.id}/execute/`, {
         prompt: prompt,
-        models: [matchingConfig.id]
+        parameters: nodeData.parameters || {}
       });
       
-      if (comparisonResponse.data?.comparison_id) {
-        // Wait a moment for the task to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Get the results
-        const resultsResponse = await authenticatedApiClient.get(`/api/ai/modelcomparison/${comparisonResponse.data.comparison_id}/results/`);
-        
-        if (resultsResponse.data?.results) {
-          return { content: resultsResponse.data.results };
-        }
+      if (response.data?.response) {
+        console.log(`✅ AI model executed successfully: ${response.data.is_mock ? 'MOCK' : 'REAL'} response`);
+        return { content: response.data.response };
       }
       
+      console.log(`❌ No response from AI model`);
       return null;
       
     } catch (error) {
-      console.error(`Error executing AI model ${provider}:${modelName}:`, error);
+      console.error(`❌ Error executing AI model ${provider}:${modelName}:`, error);
       return null;
     }
   }

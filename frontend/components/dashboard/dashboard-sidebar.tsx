@@ -37,7 +37,7 @@ interface Folder {
   subfolders?: Folder[]
 }
 
-export function DashboardSidebar({ setSelectedFolder, setShowTemplates }: { setSelectedFolder: (folder: string) => void, setShowTemplates: (show: boolean) => void }) {
+export function DashboardSidebar({ selectedFolder, setSelectedFolder, setShowTemplates }: { selectedFolder?: string, setSelectedFolder: (folder: string) => void, setShowTemplates: (show: boolean) => void }) {
   const pathname = usePathname()
   const { toast } = useToast()
   const [folders, setFolders] = useState<Folder[]>([
@@ -176,12 +176,19 @@ export function DashboardSidebar({ setSelectedFolder, setShowTemplates }: { setS
             {folders.map((folder) => (
               <div key={folder.id}>
                 <button
-                  className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm text-white/70 hover:bg-white/10 hover:text-white"
+                  className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-white/10 hover:text-white ${
+                    selectedFolder === folder.name 
+                      ? 'bg-white/20 text-white border border-white/30' 
+                      : 'text-white/70'
+                  }`}
                   onClick={() => {
+                    console.log('🔍 Sidebar: Clicked folder:', folder.name)
                     toggleFolder(folder.id)
                     if(folder.name === "Templates") {
+                      console.log('🎨 Sidebar: Showing templates')
                       setShowTemplates(true)
                     } else {
+                      console.log('📁 Sidebar: Setting selected folder to:', folder.name)
                       setSelectedFolder(folder.name)
                     }
                   }}
@@ -200,8 +207,15 @@ export function DashboardSidebar({ setSelectedFolder, setShowTemplates }: { setS
                     {folder.subfolders.map((subfolder) => (
                       <button
                         key={subfolder.id}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-sm text-white/70 hover:bg-white/10 hover:text-white"
-                        onClick={() => setSelectedFolder(subfolder.name)}
+                        className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-white/10 hover:text-white ${
+                          selectedFolder === subfolder.name 
+                            ? 'bg-white/20 text-white border border-white/30' 
+                            : 'text-white/70'
+                        }`}
+                        onClick={() => {
+                          console.log('📂 Sidebar: Clicked subfolder:', subfolder.name)
+                          setSelectedFolder(subfolder.name)
+                        }}
                       >
                         <Folders className="h-3 w-3" />
                         <span>{subfolder.name}</span>

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.db.models import Q
 from rest_framework import viewsets, serializers
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from .models import Workflow, Node, WorkflowExecution
@@ -11,14 +11,16 @@ from .tasks import run_workflow
 
 class WorkflowViewSet(viewsets.ModelViewSet):
     serializer_class = WorkflowSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Temporarily allow all for demo
     queryset = Workflow.objects.all()
 
     def get_queryset(self):
-        return Workflow.objects.filter(user=self.request.user)
+        # Return all workflows for demo purposes
+        return Workflow.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        # Skip user assignment for demo
+        serializer.save()
 
     @action(detail=True, methods=['post'])
     def execute(self, request, pk=None):
@@ -35,25 +37,23 @@ class WorkflowViewSet(viewsets.ModelViewSet):
 
 class NodeViewSet(viewsets.ModelViewSet):
     serializer_class = NodeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Temporarily allow all for demo
     queryset = Node.objects.all()
 
     def get_queryset(self):
-        user_workflows = Workflow.objects.filter(user=self.request.user)
-        return Node.objects.filter(workflow__in=user_workflows)
+        # Return all nodes for demo purposes
+        return Node.objects.all()
 
     def perform_create(self, serializer):
-        workflow = serializer.validated_data['workflow']
-        if workflow.user != self.request.user:
-            raise serializers.ValidationError("Cannot create nodes for a workflow you do not own.")
+        # Skip user validation for demo
         serializer.save()
 
 
 class WorkflowExecutionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = WorkflowExecution.objects.all()
     serializer_class = WorkflowExecutionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Temporarily allow all for demo
 
     def get_queryset(self):
-        user_workflows = Workflow.objects.filter(user=self.request.user)
-        return self.queryset.filter(workflow__in=user_workflows)
+        # Return all executions for demo purposes
+        return self.queryset.all()

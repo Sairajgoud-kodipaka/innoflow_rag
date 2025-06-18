@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Plus, Puzzle, Loader2 } from "lucide-react";
+import { Clock, Plus, Puzzle, Loader2, Star } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 import { workflowService } from "@/lib/api/workflows";
 import {
   Dialog,
@@ -29,6 +30,15 @@ type Project = {
   folder: string;
 };
 
+interface Template {
+  id: string
+  name: string
+  description: string
+  category: string
+  difficulty: "beginner" | "intermediate" | "advanced"
+  image: string
+}
+
 export function ProjectsView({ 
   selectedFolder, 
   showTemplates = false, 
@@ -39,6 +49,7 @@ export function ProjectsView({
   setShowTemplates?: (show: boolean) => void; 
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("flows");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,10 +59,198 @@ export function ProjectsView({
   const handleSetShowTemplates = setShowTemplates || setInternalShowTemplates;
   const currentShowTemplates = setShowTemplates ? showTemplates : internalShowTemplates;
 
+  // Template data matching the TemplateGallery
+  const templates: Template[] = [
+    {
+      id: "template-1",
+      name: "Simple Chatbot",
+      description: "A basic chatbot using OpenAI's GPT model",
+      category: "chatbots",
+      difficulty: "beginner",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-2",
+      name: "Document Q&A",
+      description: "Answer questions based on document content",
+      category: "rag",
+      difficulty: "intermediate",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-3",
+      name: "Multi-Agent System",
+      description: "Multiple agents working together to solve complex tasks",
+      category: "agents",
+      difficulty: "advanced",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-4",
+      name: "Text Summarizer",
+      description: "Summarize long documents automatically",
+      category: "text-processing",
+      difficulty: "beginner",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-5",
+      name: "Data Analysis Assistant",
+      description: "Analyze and visualize data with AI assistance",
+      category: "data",
+      difficulty: "intermediate",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-6",
+      name: "Content Generator",
+      description: "Generate blog posts, social media content, and more",
+      category: "content",
+      difficulty: "beginner",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-7",
+      name: "Custom Knowledge Base",
+      description: "Build a RAG system with your own knowledge base",
+      category: "rag",
+      difficulty: "intermediate",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-8",
+      name: "Blank Flow",
+      description: "Start from scratch with an empty flow",
+      category: "other",
+      difficulty: "beginner",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    // Additional templates
+    {
+      id: "template-9",
+      name: "Personal Assistant",
+      description: "A smart personal assistant for scheduling and reminders",
+      category: "chatbots",
+      difficulty: "intermediate",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-10",
+      name: "Customer Support Bot",
+      description: "Automated customer support with escalation handling",
+      category: "chatbots",
+      difficulty: "advanced",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-11",
+      name: "Legal Document Analyzer",
+      description: "Analyze legal documents and extract key information",
+      category: "rag",
+      difficulty: "advanced",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-12",
+      name: "Research Assistant",
+      description: "RAG-powered research assistant for academic papers",
+      category: "rag",
+      difficulty: "intermediate",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-13",
+      name: "CSV Data Processor",
+      description: "Process and analyze CSV files with AI insights",
+      category: "data",
+      difficulty: "beginner",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-14",
+      name: "Database Query Assistant",
+      description: "Natural language to SQL query generator",
+      category: "data",
+      difficulty: "intermediate",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-15",
+      name: "PDF Extractor",
+      description: "Extract and process content from PDF documents",
+      category: "text-processing",
+      difficulty: "beginner",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-16",
+      name: "Document Classifier",
+      description: "Automatically classify documents by type and content",
+      category: "text-processing",
+      difficulty: "intermediate",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-17",
+      name: "Email Automation",
+      description: "Automated email responses and processing",
+      category: "agents",
+      difficulty: "intermediate",
+      image: "/placeholder.svg?height=100&width=200",
+    },
+    {
+      id: "template-18",
+      name: "Social Media Manager",
+      description: "Automated social media posting and engagement",
+      category: "content",
+      difficulty: "advanced",
+      image: "/placeholder.svg?height=100&width=200",
+    }
+  ];
+
+  // Mapping between sidebar folder names and template categories (same as TemplateGallery)
+  const folderToCategoryMapping: Record<string, string[]> = {
+    "AI Assistants": ["chatbots", "agents"],
+    "RAG Applications": ["rag"],
+    "Data Processing": ["data", "text-processing"],
+    "Document Processing": ["rag", "text-processing"],
+    "Chatbots": ["chatbots"],
+    "Automation": ["agents", "other"],
+    "Team Projects": ["agents", "rag"],
+    "Collaboration": ["agents", "content"],
+  }
+
+  // Check if we should show templates in main area
+  const shouldShowTemplatesInMainArea = () => {
+    console.log('🔍 ProjectsView: Checking if should show templates for folder:', selectedFolder)
+    return selectedFolder && folderToCategoryMapping[selectedFolder] !== undefined
+  }
+
+  // Get filtered templates for selected folder
+  const getFilteredTemplates = () => {
+    if (!selectedFolder || !folderToCategoryMapping[selectedFolder]) {
+      return []
+    }
+
+    const allowedCategories = folderToCategoryMapping[selectedFolder]
+    const filtered = templates.filter(template => allowedCategories.includes(template.category))
+    console.log('📋 ProjectsView: Filtered templates for', selectedFolder, ':', filtered.map(t => t.name))
+    return filtered
+  }
+
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
+        
+        // Debug authentication status
+        console.log('🔍 Dashboard: Checking authentication status...');
+        if (typeof window !== 'undefined') {
+          const hasLocalToken = !!localStorage.getItem('access_token');
+          const hasRefreshToken = !!localStorage.getItem('refresh_token');
+          console.log('🔐 Auth status:', { hasLocalToken, hasRefreshToken });
+        }
+        
         const workflows = await workflowService.listWorkflowsForDashboard();
         setProjects(workflows);
       } catch (error) {
@@ -91,6 +290,49 @@ export function ProjectsView({
     fetchProjects();
   }, [toast]);
 
+  // Check if we should show templates instead of projects
+  const isTemplateFolder = selectedFolder && [
+    "AI Assistants", "RAG Applications", "Data Processing", 
+    "Document Processing", "Chatbots", "Automation"
+  ].includes(selectedFolder);
+
+  // Template data for display in main area
+  const templatesByCategory = {
+    "AI Assistants": [
+      { id: "template-1", name: "Simple Chatbot", description: "A basic chatbot using OpenAI's GPT model", difficulty: "beginner" },
+      { id: "template-9", name: "Personal Assistant", description: "A smart personal assistant for scheduling and reminders", difficulty: "intermediate" },
+      { id: "template-10", name: "Customer Support Bot", description: "Automated customer support with escalation handling", difficulty: "advanced" },
+    ],
+    "RAG Applications": [
+      { id: "template-2", name: "Document Q&A", description: "Answer questions based on document content", difficulty: "intermediate" },
+      { id: "template-7", name: "Custom Knowledge Base", description: "Build a RAG system with your own knowledge base", difficulty: "intermediate" },
+      { id: "template-11", name: "Legal Document Analyzer", description: "Analyze legal documents and extract key information", difficulty: "advanced" },
+    ],
+    "Data Processing": [
+      { id: "template-5", name: "Data Analysis Assistant", description: "Analyze and visualize data with AI assistance", difficulty: "intermediate" },
+      { id: "template-13", name: "CSV Data Processor", description: "Process and analyze CSV files with AI insights", difficulty: "beginner" },
+      { id: "template-14", name: "Database Query Assistant", description: "Natural language to SQL query generator", difficulty: "intermediate" },
+    ],
+    "Document Processing": [
+      { id: "template-4", name: "Text Summarizer", description: "Summarize long documents automatically", difficulty: "beginner" },
+      { id: "template-15", name: "PDF Extractor", description: "Extract and process content from PDF documents", difficulty: "beginner" },
+      { id: "template-16", name: "Document Classifier", description: "Automatically classify documents by type and content", difficulty: "intermediate" },
+    ],
+    "Chatbots": [
+      { id: "template-1", name: "Simple Chatbot", description: "A basic chatbot using OpenAI's GPT model", difficulty: "beginner" },
+      { id: "template-9", name: "Personal Assistant", description: "A smart personal assistant for scheduling and reminders", difficulty: "intermediate" },
+      { id: "template-10", name: "Customer Support Bot", description: "Automated customer support with escalation handling", difficulty: "advanced" },
+    ],
+    "Automation": [
+      { id: "template-17", name: "Email Automation", description: "Automated email responses and processing", difficulty: "intermediate" },
+      { id: "template-3", name: "Multi-Agent System", description: "Multiple agents working together to solve complex tasks", difficulty: "advanced" },
+    ]
+  };
+
+  const currentTemplates = isTemplateFolder ? templatesByCategory[selectedFolder as keyof typeof templatesByCategory] || [] : [];
+  
+  console.log('🔍 ProjectsView: selectedFolder:', selectedFolder, 'isTemplateFolder:', isTemplateFolder, 'currentTemplates count:', currentTemplates.length);
+
   const filteredProjects = projects.filter(
     (project) =>
       (activeTab === "all" || project.type === activeTab.slice(0, -1)) &&
@@ -99,20 +341,32 @@ export function ProjectsView({
 
   const handleSelectTemplate = (templateId: string, templateName: string) => {
     toast({
-      title: "Template Selected",
-      description: `Creating new flow from "${templateName}" template`,
+      title: "Creating from Template",
+      description: `Loading "${templateName}" template in flow editor...`,
     });
 
     handleSetShowTemplates(false);
 
+    // Navigate to flow editor with template parameters
+    window.location.href = `/dashboard/flow/new?template=${templateId}&name=${encodeURIComponent(templateName)}&description=${encodeURIComponent(`Created from ${templateName} template.`)}&difficulty=beginner`;
+  };
+
+  // Handle direct template selection from main area
+  const handleDirectTemplateSelect = (template: any) => {
+    toast({
+      title: "Creating from Template",
+      description: `Creating new flow from "${template.name}" template`,
+    });
+
+    // For now, just show a success message. In a real app, this would create the flow
     const newProject: Project = {
       id: `flow-${Date.now()}`,
-      name: `New ${templateName}`,
-      description: `Created from ${templateName} template.`,
+      name: `My ${template.name}`,
+      description: template.description,
       updatedAt: "Just now",
       color: "from-purple-500/20 to-blue-500/20",
       type: "flow",
-      folder: "AI Assistants",
+      folder: selectedFolder || "My Flows",
     };
 
     setProjects([newProject, ...projects]);
@@ -159,7 +413,10 @@ export function ProjectsView({
               <DialogDescription>Start with a pre-built template or create from scratch</DialogDescription>
             </DialogHeader>
 
-            <TemplateGallery onSelectTemplate={handleSelectTemplate} />
+            <TemplateGallery 
+              onSelectTemplate={handleSelectTemplate} 
+              selectedFolder={selectedFolder}
+            />
 
             <DialogFooter>
               <Button variant="outline" onClick={() => handleSetShowTemplates(false)}>
@@ -184,7 +441,67 @@ export function ProjectsView({
         </TabsList>
 
         <TabsContent value={activeTab} className="pt-0">
-          {filteredProjects.length === 0 ? (
+          {isTemplateFolder ? (
+            // Show templates directly in main area
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white">
+                  {selectedFolder} Templates
+                </h2>
+                <span className="text-sm text-white/70">
+                  {currentTemplates.length} templates available
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {currentTemplates.map((template) => (
+                  <Link 
+                    key={template.id}
+                    href={`/dashboard/flow/new?template=${template.id}&name=${encodeURIComponent(template.name)}&description=${encodeURIComponent(template.description)}&difficulty=${template.difficulty}`}
+                    onClick={() => {
+                      toast({
+                        title: "Creating from Template",
+                        description: `Loading "${template.name}" template in flow editor...`,
+                      });
+                    }}
+                  >
+                    <Card 
+                      className="h-52 border-white/10 bg-black/50 transition-colors hover:border-primary/50 hover:bg-white/5 cursor-pointer"
+                    >
+                      <CardHeader className="py-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-white text-base">{template.name}</CardTitle>
+                          <span
+                            className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
+                              template.difficulty === "beginner"
+                                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                : template.difficulty === "intermediate"
+                                ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                                : "bg-red-500/20 text-red-400 border border-red-500/30"
+                            }`}
+                          >
+                            {template.difficulty}
+                          </span>
+                        </div>
+                        <p className="text-sm text-white/70 line-clamp-2">{template.description}</p>
+                      </CardHeader>
+                      <CardContent className="py-2">
+                        <div className="h-16 rounded-md bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                          <Plus className="h-8 w-8 text-primary" />
+                        </div>
+                      </CardContent>
+                      <CardFooter className="py-2">
+                        <div className="flex items-center text-sm text-white/50">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Click to create from template
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : filteredProjects.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-white/50 mb-4">
                 <Puzzle className="h-12 w-12 mx-auto mb-2" />

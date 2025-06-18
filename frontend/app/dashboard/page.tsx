@@ -31,6 +31,11 @@ export default function DashboardPage() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState("all");
 
+  // Debug logging for selectedFolder changes
+  useEffect(() => {
+    console.log('🎯 Dashboard: Selected folder changed to:', selectedFolder);
+  }, [selectedFolder]);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (status === "authenticated") {
@@ -93,6 +98,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-black">
       {!isMobile && (
         <DashboardSidebar 
+          selectedFolder={selectedFolder}
           setSelectedFolder={setSelectedFolder}
           setShowTemplates={setShowTemplates}
         />
@@ -111,6 +117,7 @@ export default function DashboardPage() {
 
           {/* Projects Section */}
           <ProjectsView 
+            selectedFolder={selectedFolder}
             showTemplates={showTemplates} 
             setShowTemplates={setShowTemplates} 
           />

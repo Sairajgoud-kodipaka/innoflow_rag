@@ -3,6 +3,7 @@
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/components/context/auth-context";
 
 export default function GlobalClientProviders({
   children,
@@ -16,9 +17,11 @@ export default function GlobalClientProviders({
       enableSystem
       disableTransitionOnChange
     >
-      {children}
-      <Toaster />
-      <SonnerToaster />
+      <AuthProvider>
+        {children}
+        <Toaster />
+        <SonnerToaster />
+      </AuthProvider>
     </ThemeProvider>
   );
 } 

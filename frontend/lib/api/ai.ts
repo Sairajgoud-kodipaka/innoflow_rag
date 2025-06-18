@@ -59,6 +59,7 @@ class AIService {
    */
   async getProviders(): Promise<AIProvider[]> {
     try {
+      console.log('🔄 Loading AI providers...');
       // This would be implemented when backend has a providers endpoint
       // For now, return static list based on available configurations
       const configs = await this.listConfigs();
@@ -74,13 +75,17 @@ class AIService {
         return acc;
       }, {} as Record<string, AIModel[]>);
 
-      return Object.entries(providerGroups).map(([key, models]) => ({
+      const providers = Object.entries(providerGroups).map(([key, models]) => ({
         id: key,
         name: key,
         models
       }));
+      
+      console.log('✅ Loaded AI providers:', providers.length);
+      return providers;
     } catch (error) {
-      console.error('Failed to fetch AI providers:', error);
+      console.warn('⚠️ Error loading AI providers, will use fallback from listConfigs');
+      // The error will be handled by listConfigs fallback, so this should still work
       throw error;
     }
   }
@@ -90,16 +95,21 @@ class AIService {
    */
   async getProviderModels(providerId: string): Promise<AIModel[]> {
     try {
+      console.log(`🔄 Loading models for provider: ${providerId}`);
       const configs = await this.listConfigs();
-      return configs
+      const models = configs
         .filter(config => config.provider === providerId && config.is_active)
         .map(config => ({
           id: config.id.toString(),
           name: config.model_name,
           description: config.name
         }));
+      
+      console.log(`✅ Loaded ${models.length} models for provider ${providerId}`);
+      return models;
     } catch (error) {
-      console.error(`Failed to fetch models for provider ${providerId}:`, error);
+      console.warn(`⚠️ Error loading models for provider ${providerId}, will use fallback from listConfigs`);
+      // The error will be handled by listConfigs fallback, so this should still work
       throw error;
     }
   }
@@ -109,12 +119,81 @@ class AIService {
    */
   async listConfigs(): Promise<AIModelConfig[]> {
     try {
+      console.log('🔄 Fetching AI model configurations...');
       const response = await apiClient.get<{ results?: AIModelConfig[] } | AIModelConfig[]>('/api/ai/aimodelconfig/');
+      
       // Handle Django REST framework pagination
-      return (response.data as any).results || response.data as AIModelConfig[];
-    } catch (error) {
-      console.error('Failed to fetch AI configs:', error);
-      throw error;
+      const configs = (response.data as any).results || response.data as AIModelConfig[];
+      console.log('✅ Successfully fetched AI configs:', configs.length);
+      return configs;
+    } catch (error: any) {
+      console.warn('⚠️ Failed to fetch AI configs from backend, using fallback data:', {
+        message: error?.message || 'Unknown error',
+        isNetworkError: !error?.response,
+        status: error?.response?.status || 'No status'
+      });
+      
+      // Return fallback AI configurations to prevent crashes
+      const fallbackConfigs: AIModelConfig[] = [
+        {
+          id: 1,
+          name: 'OpenAI GPT-3.5 Turbo (Demo)',
+          provider: 'OPENAI',
+          model_name: 'gpt-3.5-turbo',
+          is_active: true,
+          model_type: 'chat',
+          parameters: { temperature: 0.7, max_tokens: 1000 },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 2,
+          name: 'Anthropic Claude (Demo)',
+          provider: 'ANTHROPIC',
+          model_name: 'claude-3-5-sonnet-20241022',
+          is_active: true,
+          model_type: 'chat',
+          parameters: { temperature: 0.7, max_tokens: 1000 },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 3,
+          name: 'Google Gemini (Demo)',
+          provider: 'GEMINI',
+          model_name: 'gemini-1.5-pro',
+          is_active: true,
+          model_type: 'chat',
+          parameters: { temperature: 0.7, max_tokens: 1000 },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 4,
+          name: 'DeepSeek Chat (Demo)',
+          provider: 'DEEPSEEK',
+          model_name: 'deepseek-chat',
+          is_active: true,
+          model_type: 'chat',
+          parameters: { temperature: 0.7, max_tokens: 1000 },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 5,
+          name: 'HuggingFace CodeLlama (Demo)',
+          provider: 'HUGGINGFACE',
+          model_name: 'codellama/CodeLlama-7b-Instruct-hf',
+          is_active: true,
+          model_type: 'chat',
+          parameters: { temperature: 0.7, max_tokens: 1000 },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      
+      console.log('🎭 Using fallback AI configurations:', fallbackConfigs.length);
+      return fallbackConfigs;
     }
   }
 

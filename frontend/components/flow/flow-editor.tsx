@@ -663,9 +663,26 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
       console.log('🔍 Node details:', nodes.map(n => ({ id: n.id, type: n.type, data: n.data })));
       
       // Check if we have the required nodes
-      const hasInput = nodes.some(n => n.type === 'text-input');
-      const hasAI = nodes.some(n => n.type === 'anthropic' || n.type === 'openai');
-      const hasOutput = nodes.some(n => n.type === 'text-output');
+      const hasInput = nodes.some(n => 
+        n.type === 'input' || 
+        n.type === 'chatInput' || 
+        n.type === 'text-input'
+      );
+      const hasAI = nodes.some(n => 
+        n.type === 'anthropic' || 
+        n.type === 'openai' || 
+        n.type === 'modelNode' || 
+        n.type === 'model-node' || 
+        n.type === 'deepseek' || 
+        n.type === 'ollama' || 
+        n.type === 'huggingface' || 
+        n.type === 'gemini'
+      );
+      const hasOutput = nodes.some(n => 
+        n.type === 'output' || 
+        n.type === 'chatOutput' || 
+        n.type === 'text-output'
+      );
       
       console.log('🔍 Node validation:', { hasInput, hasAI, hasOutput });
       
