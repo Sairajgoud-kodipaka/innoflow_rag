@@ -8,6 +8,7 @@ class AIModelConfig(models.Model):
         ('DEEPSEEK', 'DeepSeek'),
         ('OLLAMA', 'Ollama'),
         ('HUGGINGFACE', 'Hugging Face'),
+        ('GEMINI', 'Gemini'),
     ]
     
     name = models.CharField(max_length=100)

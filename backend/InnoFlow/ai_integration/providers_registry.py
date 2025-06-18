@@ -3,6 +3,7 @@ from .utils.huggingface_provider import HuggingFaceProvider
 from .utils.ollama_provider import OllamaProvider
 from .utils.claude_provider import ClaudeProvider
 from .utils.deepseek_provider import DeepSeekProvider
+from .utils.gemini_provider import GeminiProvider
 
 class ProviderRegistry:
     _providers = {
@@ -12,6 +13,7 @@ class ProviderRegistry:
         "HUGGINGFACE": HuggingFaceProvider,
         "DEEPSEEK": DeepSeekProvider,
         "OLLAMA": OllamaProvider,
+        "GEMINI": GeminiProvider,
     }
 
     @classmethod
@@ -39,3 +41,4 @@ ProviderRegistry.register_provider("OLLAMA", OllamaProvider)
 ProviderRegistry.register_provider("CLAUDE", ClaudeProvider)
 ProviderRegistry.register_provider("ANTHROPIC", ClaudeProvider)
 ProviderRegistry.register_provider("DEEPSEEK", DeepSeekProvider)
+ProviderRegistry.register_provider("GEMINI", GeminiProvider)
