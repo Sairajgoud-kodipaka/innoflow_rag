@@ -1,12 +1,19 @@
 "use client"
 
+import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
 
 export default function HelpPage() {
+  const [selectedFolder, setSelectedFolder] = useState("My Workflows")
+  const [showTemplates, setShowTemplates] = useState(false)
+
   return (
     <div className="min-h-screen bg-black">
-      <DashboardSidebar />
+      <DashboardSidebar 
+        setSelectedFolder={setSelectedFolder}
+        setShowTemplates={setShowTemplates}
+      />
       <div className="md:pl-64 transition-all duration-300">
         <DashboardHeader />
         <main className="pt-16 p-4 md:p-6">

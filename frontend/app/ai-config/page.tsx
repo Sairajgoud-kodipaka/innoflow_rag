@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { aiService } from '@/lib/api/ai';
 import AIConfigForm from '@/components/ai/AIConfigForm';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface AIModelConfig {
   id: number;
@@ -50,7 +50,7 @@ export default function AIConfigPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-black p-6">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white shadow rounded-lg p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-6">AI Model Configuration</h1>

@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny  # Temporarily allow all for development
 from django.db.models import Avg, Sum
 from .models import WorkflowAnalytics, UserActivityLog, PerformanceMetrics, WorkflowUsageStats
 from .serializers import WorkflowAnalyticsSerializer
@@ -12,6 +13,7 @@ from .services import AnalyticsService
 class AnalyticsViewSet(viewsets.ModelViewSet):
     queryset = WorkflowAnalytics.objects.all()
     serializer_class = WorkflowAnalyticsSerializer
+    permission_classes = [AllowAny]  # Temporarily allow unauthenticated access for development
 
     @action(detail=False, methods=['get'])
     def workflow_performance(self, request):

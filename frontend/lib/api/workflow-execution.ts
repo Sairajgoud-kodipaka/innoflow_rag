@@ -1,5 +1,5 @@
 import { Node, Edge } from 'reactflow';
-import apiClient from './client';
+import authenticatedApiClient from './client';
 
 export interface ExecutionContext {
   [nodeId: string]: any;
@@ -204,33 +204,249 @@ export class WorkflowExecutionEngine {
     console.log(`📝 Input: ${inputText}`);
 
     try {
-      // Always use intelligent response for accurate answers
-      const intelligentResponse = this.generateIntelligentResponse(inputText);
-      console.log('✅ Generated intelligent response:', intelligentResponse);
+      // Try to use backend AI integration if available
+      const response = await this.executeAIModel('ANTHROPIC', modelName, inputText, nodeData);
       
-      return {
-        type: 'ai_response',
-        content: intelligentResponse,
-        model: modelName,
-        provider: 'ANTHROPIC',
-        timestamp: new Date().toISOString(),
-        fallback: false
-      };
+      if (response) {
+        return {
+          type: 'ai_response',
+          content: response.content,
+          model: modelName,
+          provider: 'ANTHROPIC',
+          timestamp: new Date().toISOString(),
+          fallback: false
+        };
+      }
       
     } catch (error) {
       console.error('🚨 Anthropic execution error:', error);
+    }
+    
+    // Fallback to intelligent response
+    const intelligentResponse = this.generateIntelligentResponse(inputText);
+    
+    return {
+      type: 'ai_response',
+      content: intelligentResponse,
+      model: modelName,
+      provider: 'ANTHROPIC',
+      timestamp: new Date().toISOString(),
+      fallback: true
+    };
+  }
+
+  /**
+   * Execute OpenAI node (similar to Anthropic)
+   */
+  private async executeOpenAINode(node: Node, context: ExecutionContext): Promise<any> {
+    const nodeData = node.data || {};
+    const inputText = this.getInputFromPreviousNodes(node.id, context);
+    
+    if (!inputText) {
+      throw new Error('No input text received from previous nodes');
+    }
+
+    const modelName = nodeData.model || 'gpt-3.5-turbo';
+    
+    try {
+      // Try to use backend AI integration if available
+      const response = await this.executeAIModel('OPENAI', modelName, inputText, nodeData);
       
-      // Intelligent fallback response
-      const intelligentResponse = this.generateIntelligentResponse(inputText);
+      if (response) {
+        return {
+          type: 'ai_response',
+          content: response.content,
+          model: modelName,
+          provider: 'OPENAI',
+          timestamp: new Date().toISOString(),
+          fallback: false
+        };
+      }
       
-      return {
-        type: 'ai_response',
-        content: intelligentResponse,
-        model: modelName,
-        provider: 'ANTHROPIC',
-        timestamp: new Date().toISOString(),
-        fallback: true
-      };
+    } catch (error) {
+      console.error('🚨 OpenAI execution error:', error);
+    }
+    
+    // Fallback to intelligent response
+    const intelligentResponse = this.generateIntelligentResponse(inputText);
+    
+    return {
+      type: 'ai_response',
+      content: intelligentResponse,
+      model: modelName,
+      provider: 'OPENAI',
+      timestamp: new Date().toISOString(),
+      fallback: true
+    };
+  }
+
+  /**
+   * Execute DeepSeek node
+   */
+  private async executeDeepSeekNode(node: Node, context: ExecutionContext): Promise<any> {
+    const nodeData = node.data || {};
+    const inputText = this.getInputFromPreviousNodes(node.id, context);
+    
+    const modelName = nodeData.model || 'deepseek-chat';
+    
+    try {
+      // Try to use backend AI integration if available
+      const response = await this.executeAIModel('DEEPSEEK', modelName, inputText, nodeData);
+      
+      if (response) {
+        return {
+          type: 'ai_response',
+          content: response.content,
+          model: modelName,
+          provider: 'DEEPSEEK',
+          timestamp: new Date().toISOString(),
+          fallback: false
+        };
+      }
+      
+    } catch (error) {
+      console.error('🚨 DeepSeek execution error:', error);
+    }
+    
+    // Fallback to intelligent response
+    const intelligentResponse = this.generateIntelligentResponse(inputText);
+    
+    return {
+      type: 'ai_response',
+      content: intelligentResponse,
+      model: modelName,
+      provider: 'DEEPSEEK',
+      timestamp: new Date().toISOString(),
+      fallback: true
+    };
+  }
+
+  /**
+   * Execute Ollama node
+   */
+  private async executeOllamaNode(node: Node, context: ExecutionContext): Promise<any> {
+    const nodeData = node.data || {};
+    const inputText = this.getInputFromPreviousNodes(node.id, context);
+    
+    const modelName = nodeData.model || 'llama2:7b';
+    
+    try {
+      // Try to use backend AI integration if available
+      const response = await this.executeAIModel('OLLAMA', modelName, inputText, nodeData);
+      
+      if (response) {
+        return {
+          type: 'ai_response',
+          content: response.content,
+          model: modelName,
+          provider: 'OLLAMA',
+          timestamp: new Date().toISOString(),
+          fallback: false
+        };
+      }
+      
+    } catch (error) {
+      console.error('🚨 Ollama execution error:', error);
+    }
+    
+    // Fallback to intelligent response
+    const intelligentResponse = this.generateIntelligentResponse(inputText);
+    
+    return {
+      type: 'ai_response',
+      content: intelligentResponse,
+      model: modelName,
+      provider: 'OLLAMA',
+      timestamp: new Date().toISOString(),
+      fallback: true
+    };
+  }
+
+  /**
+   * Execute HuggingFace node
+   */
+  private async executeHuggingFaceNode(node: Node, context: ExecutionContext): Promise<any> {
+    const nodeData = node.data || {};
+    const inputText = this.getInputFromPreviousNodes(node.id, context);
+    
+    const modelName = nodeData.model || 'codellama/CodeLlama-7b-Instruct-hf';
+    
+    try {
+      // Try to use backend AI integration if available
+      const response = await this.executeAIModel('HUGGINGFACE', modelName, inputText, nodeData);
+      
+      if (response) {
+        return {
+          type: 'ai_response',
+          content: response.content,
+          model: modelName,
+          provider: 'HUGGINGFACE',
+          timestamp: new Date().toISOString(),
+          fallback: false
+        };
+      }
+      
+    } catch (error) {
+      console.error('🚨 HuggingFace execution error:', error);
+    }
+    
+    // Fallback to intelligent response
+    const intelligentResponse = this.generateIntelligentResponse(inputText);
+    
+    return {
+      type: 'ai_response',
+      content: intelligentResponse,
+      model: modelName,
+      provider: 'HUGGINGFACE',
+      timestamp: new Date().toISOString(),
+      fallback: true
+    };
+  }
+
+  /**
+   * Generic AI model execution using backend AI integration
+   */
+  private async executeAIModel(provider: string, modelName: string, prompt: string, nodeData: any): Promise<{ content: string } | null> {
+    try {
+      // First, try to find an existing AI model configuration
+      const configsResponse = await authenticatedApiClient.get('/api/ai/aimodelconfig/');
+      const configs = configsResponse.data;
+      
+      // Look for a config that matches the provider and model
+      const matchingConfig = configs.find((config: any) => 
+        config.provider === provider && 
+        config.model_name === modelName &&
+        config.is_active
+      );
+      
+      if (!matchingConfig) {
+        console.log(`No active AI model config found for ${provider}:${modelName}`);
+        return null;
+      }
+      
+      // Use the model comparison API to execute the AI model
+      const comparisonResponse = await authenticatedApiClient.post('/api/ai/modelcomparison/compare-models/', {
+        prompt: prompt,
+        models: [matchingConfig.id]
+      });
+      
+      if (comparisonResponse.data?.comparison_id) {
+        // Wait a moment for the task to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Get the results
+        const resultsResponse = await authenticatedApiClient.get(`/api/ai/modelcomparison/${comparisonResponse.data.comparison_id}/results/`);
+        
+        if (resultsResponse.data?.results) {
+          return { content: resultsResponse.data.results };
+        }
+      }
+      
+      return null;
+      
+    } catch (error) {
+      console.error(`Error executing AI model ${provider}:${modelName}:`, error);
+      return null;
     }
   }
 
@@ -274,163 +490,6 @@ export class WorkflowExecutionEngine {
     
     // Default intelligent response for other questions
     return `Thank you for your question: "${input}". This is a demonstration of InnoFlow's AI workflow execution system. In a production environment, this would be processed by the selected AI model to provide you with accurate, relevant information.`;
-  }
-
-  /**
-   * Execute OpenAI node (similar to Anthropic)
-   */
-  private async executeOpenAINode(node: Node, context: ExecutionContext): Promise<any> {
-    const nodeData = node.data || {};
-    const inputText = this.getInputFromPreviousNodes(node.id, context);
-    
-    if (!inputText) {
-      throw new Error('No input text received from previous nodes');
-    }
-
-    const modelName = nodeData.model || 'gpt-3.5-turbo';
-    
-    try {
-      const response = await apiClient.post('/api/ai/execute/', {
-        provider: 'OPENAI',
-        model_name: modelName,
-        prompt: inputText,
-        parameters: {
-          max_tokens: nodeData.maxTokens || 1024,
-          temperature: nodeData.temperature || 0.7,
-        }
-      });
-
-      const aiResponse = response.data?.response || response.data?.result;
-      
-      return {
-        type: 'ai_response',
-        content: aiResponse || this.generateIntelligentResponse(inputText),
-        model: modelName,
-        provider: 'OPENAI',
-        timestamp: new Date().toISOString()
-      };
-      
-    } catch (error) {
-      return {
-        type: 'ai_response',
-        content: this.generateIntelligentResponse(inputText),
-        model: modelName,
-        provider: 'OPENAI',
-        timestamp: new Date().toISOString(),
-        fallback: true
-      };
-    }
-  }
-
-  /**
-   * Execute DeepSeek node
-   */
-  private async executeDeepSeekNode(node: Node, context: ExecutionContext): Promise<any> {
-    const nodeData = node.data || {};
-    const inputText = this.getInputFromPreviousNodes(node.id, context);
-    
-    const modelName = nodeData.model || 'deepseek-chat';
-    
-    try {
-      const response = await apiClient.post('/api/ai/execute/', {
-        provider: 'DEEPSEEK',
-        model_name: modelName,
-        prompt: inputText,
-        parameters: nodeData.parameters || {}
-      });
-
-      return {
-        type: 'ai_response',
-        content: response.data?.response || this.generateIntelligentResponse(inputText),
-        model: modelName,
-        provider: 'DEEPSEEK',
-        timestamp: new Date().toISOString()
-      };
-      
-    } catch (error) {
-      return {
-        type: 'ai_response',
-        content: this.generateIntelligentResponse(inputText),
-        model: modelName,
-        provider: 'DEEPSEEK',
-        timestamp: new Date().toISOString(),
-        fallback: true
-      };
-    }
-  }
-
-  /**
-   * Execute Ollama node
-   */
-  private async executeOllamaNode(node: Node, context: ExecutionContext): Promise<any> {
-    const nodeData = node.data || {};
-    const inputText = this.getInputFromPreviousNodes(node.id, context);
-    
-    const modelName = nodeData.model || 'llama2:7b';
-    
-    try {
-      const response = await apiClient.post('/api/ai/execute/', {
-        provider: 'OLLAMA',
-        model_name: modelName,
-        prompt: inputText,
-        parameters: nodeData.parameters || {}
-      });
-
-      return {
-        type: 'ai_response',
-        content: response.data?.response || this.generateIntelligentResponse(inputText),
-        model: modelName,
-        provider: 'OLLAMA',
-        timestamp: new Date().toISOString()
-      };
-      
-    } catch (error) {
-      return {
-        type: 'ai_response',
-        content: this.generateIntelligentResponse(inputText),
-        model: modelName,
-        provider: 'OLLAMA',
-        timestamp: new Date().toISOString(),
-        fallback: true
-      };
-    }
-  }
-
-  /**
-   * Execute HuggingFace node
-   */
-  private async executeHuggingFaceNode(node: Node, context: ExecutionContext): Promise<any> {
-    const nodeData = node.data || {};
-    const inputText = this.getInputFromPreviousNodes(node.id, context);
-    
-    const modelName = nodeData.model || 'codellama/CodeLlama-7b-Instruct-hf';
-    
-    try {
-      const response = await apiClient.post('/api/ai/execute/', {
-        provider: 'HUGGINGFACE',
-        model_name: modelName,
-        prompt: inputText,
-        parameters: nodeData.parameters || {}
-      });
-
-      return {
-        type: 'ai_response',
-        content: response.data?.response || this.generateIntelligentResponse(inputText),
-        model: modelName,
-        provider: 'HUGGINGFACE',
-        timestamp: new Date().toISOString()
-      };
-      
-    } catch (error) {
-      return {
-        type: 'ai_response',
-        content: this.generateIntelligentResponse(inputText),
-        model: modelName,
-        provider: 'HUGGINGFACE',
-        timestamp: new Date().toISOString(),
-        fallback: true
-      };
-    }
   }
 
   /**

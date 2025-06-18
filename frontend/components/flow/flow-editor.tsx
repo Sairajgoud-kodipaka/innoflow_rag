@@ -1037,15 +1037,7 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
           </Button>
         </Panel>
 
-        {/* ⚠️ ERROR PANEL */}
-        {!user && (
-          <Panel position="bottom-center">
-            <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-red-200 text-center">
-              <AlertCircle className="h-5 w-5 mx-auto mb-2" />
-              <p>Please log in to save and execute workflows</p>
-            </div>
-          </Panel>
-        )}
+
       </ReactFlow>
 
       {/* 🎛️ NODE PROPERTIES PANEL */}

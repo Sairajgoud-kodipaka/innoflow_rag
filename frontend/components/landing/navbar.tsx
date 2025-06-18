@@ -34,9 +34,9 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/images/logo.jpg"
-              alt="Innoflow Logo"
+              <Image
+                src="/images/logo.jpg"
+                alt="Innoflow Logo"
               width={50}
               height={50}
               className="text-primary"
@@ -104,7 +104,7 @@ export function Navbar() {
               <span className="absolute w-64 h-0 transition-all duration-300 origin-center rotate-45 -translate-x-20 bg-black top-1/2 group-hover:h-64 group-hover:-translate-y-32 ease"></span>
               <span className="relative text-white transition duration-300 group-hover:text-white ease">Get Started</span>
             </Button>
-            </Link>
+                </Link>
           </div>
           <div className="md:hidden">
             <DropdownMenu>

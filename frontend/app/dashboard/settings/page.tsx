@@ -1,3 +1,5 @@
+"use client"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
 import { Button } from "@/components/ui/button"
@@ -6,11 +8,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from "react"
 
 const SettingsPage = () => {
+  const [selectedFolder, setSelectedFolder] = useState("all");
+  const [showTemplates, setShowTemplates] = useState(false);
+
   return (
     <div className="min-h-screen bg-black">
-      <DashboardSidebar />
+      <DashboardSidebar 
+        setSelectedFolder={setSelectedFolder}
+        setShowTemplates={setShowTemplates}
+      />
       <div className="md:pl-64 transition-all duration-300">
         <DashboardHeader />
         <main className="pt-16 p-4 md:p-6">
@@ -253,7 +262,7 @@ const SettingsPage = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="p-4 rounded-md bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-white/10">
+                    <div className="p-4 rounded-md bg-black/50 border border-white/10">
                       <div className="flex justify-between items-center mb-2">
                         <h3 className="text-lg font-medium text-white">Current Plan: Pro</h3>
                         <span className="px-2 py-1 text-xs rounded-full bg-primary/20 text-primary">Active</span>

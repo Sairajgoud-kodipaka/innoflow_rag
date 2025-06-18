@@ -11,9 +11,9 @@ export function DragDropSection() {
               {/* Code editor mockup */}
               <div className="bg-[#1e1e2e] p-4 font-mono text-xs">
                 <div className="flex items-center gap-2 text-purple-300 mb-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
                   <span className="ml-2">// component.js</span>
                 </div>
                 
@@ -42,13 +42,13 @@ export function DragDropSection() {
                   <div className="h-px w-8 bg-purple-500"></div>
                   <div className="bg-indigo-600 text-white px-3 py-1 rounded text-xs font-sans">
                     Prompt
-                  </div>
+                </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        
+                    </div>
+                    
         {/* Right side - Text content */}
         <div className="w-full md:w-1/2 space-y-6">
           <h2 className="text-5xl font-bold text-white mb-4">
@@ -69,7 +69,7 @@ export function DragDropSection() {
               <p className="text-purple-100">
                 <span className="font-semibold">Visual Flow Builder</span> - Create complex AI workflows with an intuitive drag-and-drop interface
               </p>
-            </div>
+                    </div>
             
             <div className="flex items-start gap-3">
               <svg className="h-6 w-6 text-purple-300 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -78,8 +78,8 @@ export function DragDropSection() {
               <p className="text-purple-100">
                 <span className="font-semibold">Reusable Components</span> - Connect components, visualize data flow, and iterate rapidly
               </p>
-            </div>
-            
+              </div>
+              
             <div className="flex items-start gap-3">
               <svg className="h-6 w-6 text-purple-300 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
@@ -87,8 +87,8 @@ export function DragDropSection() {
               <p className="text-purple-100">
                 <span className="font-semibold">Quick Deployment</span> - Deploy your flows directly to production with one click
               </p>
-            </div>
-          </div>
+                </div>
+                </div>
         </div>
       </div>
     </div>

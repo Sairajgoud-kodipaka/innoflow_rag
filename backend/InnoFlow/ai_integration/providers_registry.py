@@ -8,6 +8,7 @@ class ProviderRegistry:
     _providers = {
         "OPENAI": OpenAIProvider,
         "CLAUDE": ClaudeProvider,
+        "ANTHROPIC": ClaudeProvider,
         "HUGGINGFACE": HuggingFaceProvider,
         "DEEPSEEK": DeepSeekProvider,
         "OLLAMA": OllamaProvider,
@@ -32,8 +33,9 @@ class ProviderRegistry:
 
 
 # Register providers
-ProviderRegistry.register_provider("openai", OpenAIProvider)
-ProviderRegistry.register_provider("huggingface", HuggingFaceProvider)
-ProviderRegistry.register_provider("ollama", OllamaProvider)
-ProviderRegistry.register_provider("claude", ClaudeProvider)
-ProviderRegistry.register_provider("deepseek", DeepSeekProvider)
+ProviderRegistry.register_provider("OPENAI", OpenAIProvider)
+ProviderRegistry.register_provider("HUGGINGFACE", HuggingFaceProvider)
+ProviderRegistry.register_provider("OLLAMA", OllamaProvider)
+ProviderRegistry.register_provider("CLAUDE", ClaudeProvider)
+ProviderRegistry.register_provider("ANTHROPIC", ClaudeProvider)
+ProviderRegistry.register_provider("DEEPSEEK", DeepSeekProvider)

@@ -37,7 +37,7 @@ export default function TestAuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-black py-8">
       <div className="max-w-4xl mx-auto px-4">
         <Card>
           <CardHeader>

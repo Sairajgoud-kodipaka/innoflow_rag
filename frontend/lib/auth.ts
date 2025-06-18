@@ -61,10 +61,16 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = account.access_token
         token.user = user
         
-        // For Google OAuth, create/update user in backend
+        // For Google OAuth, create/update user in backend and get JWT tokens
         if (account.provider === 'google') {
           try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google/`, {
+            console.log('🔄 Syncing Google user with backend...', {
+              email: user.email,
+              name: user.name,
+              apiUrl: process.env.NEXT_PUBLIC_API_URL
+            });
+            
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/google/`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -77,8 +83,25 @@ export const authOptions: NextAuthOptions = {
               }),
             })
             
+            console.log('📡 Backend sync response:', {
+              status: response.status,
+              statusText: response.statusText,
+              ok: response.ok
+            });
+            
             if (response.ok) {
               const backendUser = await response.json()
+              console.log('✅ Backend user sync successful with JWT tokens:', {
+                hasAccessToken: !!backendUser.access_token,
+                hasRefreshToken: !!backendUser.refresh_token,
+                userId: backendUser.id,
+                username: backendUser.username
+              })
+              
+              // Store the JWT tokens for API calls
+              token.jwtAccessToken = backendUser.access_token
+              token.jwtRefreshToken = backendUser.refresh_token
+              
               token.user = {
                 ...user,
                 id: backendUser.id,
@@ -86,9 +109,21 @@ export const authOptions: NextAuthOptions = {
                 company: backendUser.company,
                 bio: backendUser.bio,
               }
+              token.backendUser = backendUser
+            } else {
+              const errorText = await response.text()
+              console.error('❌ Backend user sync failed:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText
+              })
             }
-          } catch (error) {
-            console.error('Backend user sync error:', error)
+          } catch (error: any) {
+            console.error('❌ Backend user sync error:', {
+              message: error?.message || 'Unknown error',
+              name: error?.name || 'Unknown',
+              apiUrl: process.env.NEXT_PUBLIC_API_URL
+            })
           }
         }
       }
@@ -97,21 +132,37 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       // Send properties to the client
       session.accessToken = token.accessToken as string
+      session.jwtAccessToken = token.jwtAccessToken as string
+      session.jwtRefreshToken = token.jwtRefreshToken as string
       session.user = token.user as any
+      session.backendUser = token.backendUser as any
       return session
     },
     async redirect({ url, baseUrl }) {
-      // Redirect to dashboard after successful authentication
+      // Handle redirects after authentication
+      console.log('NextAuth redirect:', { url, baseUrl })
+      
+      // If redirecting to sign-in pages, go to dashboard instead
+      if (url.includes('/signin') || url.includes('/login') || url.includes('/signup')) {
+        return `${baseUrl}/dashboard`
+      }
+      
+      // If it's a relative URL, prepend baseUrl
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
+      
+      // If it's the same origin, allow it
+      if (new URL(url).origin === baseUrl) return url
+      
+      // Default to dashboard for successful authentication
       return `${baseUrl}/dashboard`
     }
   },
   pages: {
-    signIn: '/login',
+    signIn: '/signin',
     error: '/auth/error',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 }
 
 export default NextAuth(authOptions) 

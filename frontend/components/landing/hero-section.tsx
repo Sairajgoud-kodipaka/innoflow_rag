@@ -95,12 +95,12 @@ export function HeroSection() {
                   <div className="text-sm text-white/70">Temperature</div>
                   <div className="px-1">
                     <div className="relative h-6 w-full">
-                      <Slider
-                        value={[temperature]}
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        onValueChange={(value) => setTemperature(value[0])}
+                    <Slider
+                      value={[temperature]}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      onValueChange={(value) => setTemperature(value[0])}
                       />
                     </div>
                     <div className="mt-1 flex justify-between text-xs">
@@ -114,9 +114,9 @@ export function HeroSection() {
                       </div>
                       <button
                       className="z-10 px-4 py-1 bg-transparent border border-white/20 text-white/70 rounded text-sm hover:bg-white/5 transition-colors cursor-pointer"
-                      onClick={() => setTemperature(0.5)}
-                    >
-                      Reset
+                        onClick={() => setTemperature(0.5)}
+                      >
+                        Reset
                     </button>
                      
                     </div>
@@ -127,7 +127,7 @@ export function HeroSection() {
                 </div>
                
               </div>
-              
+
             </div>
             <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-purple-500/20 blur-3xl"></div>
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-500/20 blur-3xl"></div>

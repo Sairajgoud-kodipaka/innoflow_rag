@@ -54,13 +54,13 @@ export function CTASection() {
               background: "radial-gradient(circle at center, rgba(138, 43, 226, 0.15) 0%, transparent 70%)",
               opacity: isHovered ? 0.8 : 0.3,
               transition: "opacity 0.5s ease-out"
-            }}
-            animate={{
+          }}
+          animate={{
               scale: isHovered ? [1, 1.05, 1] : [1, 1.02, 1],
-            }}
-            transition={{
+          }}
+          transition={{
               duration: 3,
-              repeat: Infinity,
+            repeat: Infinity,
               ease: "easeInOut"
             }}
           />
@@ -77,24 +77,24 @@ export function CTASection() {
           />
           
           {/* Animated gradient overlay */}
-          <motion.div
+            <motion.div
             className="absolute inset-0 rounded-2xl z-0 overflow-hidden"
-            style={{
+              style={{
               background: "linear-gradient(45deg, rgba(138, 43, 226, 0.1), transparent 60%)",
               opacity: 0
-            }}
-            animate={{
+              }}
+              animate={{
               opacity: isHovered ? 0.6 : 0,
               backgroundPosition: isHovered ? ["0% 0%", "100% 100%"] : "0% 0%"
-            }}
-            transition={{
+              }}
+              transition={{
               duration: 1.5,
               ease: "easeOut"
             }}
           />
           
                    
-          <motion.h2 
+              <motion.h2 
             className="mb-6 text-4xl font-bold relative z-10"
             initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
@@ -107,72 +107,72 @@ export function CTASection() {
             }}
           >
             Create your first flow
-          </motion.h2>
-          
-          <motion.p 
+              </motion.h2>
+              
+              <motion.p 
             className="mb-8 text-white/70 relative z-10"
             initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             Join thousands of developers constructing their AI workflows.
-            <br />
+                <br />
             Start your first Innoflow project now.
-          </motion.p>
-          
-          <motion.div 
+              </motion.p>
+
+              <motion.div 
             className="flex flex-wrap justify-center gap-4 relative z-10"
             initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            <Link href="/signup">
-              <motion.div
-                onMouseEnter={() => setIsButtonHovered(true)}
-                onMouseLeave={() => setIsButtonHovered(false)}
-                whileHover={{ scale: 1.05 }}
+              >
+                <Link href="/signup">
+                  <motion.div
+                    onMouseEnter={() => setIsButtonHovered(true)}
+                    onMouseLeave={() => setIsButtonHovered(false)}
+                    whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
                 className="inline-block"
-              >
-                <Button 
-                  size="lg"
+                  >
+                    <Button 
+                      size="lg"
                   className="relative rounded-md px-8 py-4 overflow-hidden cursor-pointer border-none text-white text-lg font-medium"
-                  style={{
-                    background: isButtonHovered 
+                      style={{
+                        background: isButtonHovered 
                       ? "linear-gradient(45deg, #8e2de2, #b800ff)" 
                       : "linear-gradient(45deg, #6a11cb, #9442fe)",
-                    boxShadow: isButtonHovered
+                        boxShadow: isButtonHovered
                       ? "0 8px 20px rgba(138, 43, 226, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1) inset"
                       : "0 4px 15px rgba(106, 17, 203, 0.4)",
-                    transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
-                  }}
-                >
-                  <motion.span 
+                        transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                      }}
+                    >
+                      <motion.span 
                     className="relative z-10"
-                    animate={{ 
-                      textShadow: isButtonHovered 
+                        animate={{ 
+                          textShadow: isButtonHovered 
                         ? "0 0 8px rgba(255, 255, 255, 0.6)" 
-                        : "0 0 0px rgba(255, 255, 255, 0)"
-                    }}
-                    transition={{ duration: 0.3 }}
-                  >
+                            : "0 0 0px rgba(255, 255, 255, 0)"
+                        }}
+                        transition={{ duration: 0.3 }}
+                      >
                     Get Started For Free
-                  </motion.span>
+                      </motion.span>
 
                   {/* Button shine effect */}
                   <motion.span 
                     className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-white/0 via-white/30 to-white/0"
-                    style={{
-                      transform: "skewX(-20deg)",
-                    }}
-                    initial={{ x: "-100%" }}
-                    animate={{ 
-                      x: isButtonHovered ? "100%" : "-100%"
-                    }}
-                    transition={{ 
+                        style={{
+                          transform: "skewX(-20deg)",
+                        }}
+                        initial={{ x: "-100%" }}
+                        animate={{ 
+                          x: isButtonHovered ? "100%" : "-100%"
+                        }}
+                        transition={{ 
                       duration: isButtonHovered ? 0.8 : 0.0,
                       ease: "easeOut",
-                      repeat: isButtonHovered ? Infinity : 0,
+                          repeat: isButtonHovered ? Infinity : 0,
                       repeatDelay: 1.5
                     }}
                   />
@@ -193,9 +193,9 @@ export function CTASection() {
                       }}
                     />
                   )}
-                </Button>
-              </motion.div>
-            </Link>
+                    </Button>
+                  </motion.div>
+                </Link>
           </motion.div>
         </motion.div>
       </div>
