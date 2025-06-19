@@ -37,6 +37,12 @@ class GeminiProvider(AIProvider):
             if "safety_settings" in kwargs:
                 payload["safetySettings"] = kwargs["safety_settings"]
             
+            # Debug logging
+            url = f"{self.base_url}/models/{self.model_name}:generateContent?key={self.api_key[:10]}..."
+            print(f"🔍 DEBUG: Making request to: {url}")
+            print(f"🔍 DEBUG: Headers: {headers}")
+            print(f"🔍 DEBUG: Payload: {payload}")
+            
             response = requests.post(
                 f"{self.base_url}/models/{self.model_name}:generateContent?key={self.api_key}",
                 headers=headers,
@@ -44,9 +50,30 @@ class GeminiProvider(AIProvider):
                 timeout=30
             )
             
+            print(f"🔍 DEBUG: Response status: {response.status_code}")
+            print(f"🔍 DEBUG: Response headers: {dict(response.headers)}")
+            print(f"🔍 DEBUG: Response text: {response.text}")
+            
             # Better error handling for different HTTP status codes
             if response.status_code == 429:
                 print(f"Gemini Rate Limit: Too many requests. Please wait and try again.")
+                print(f"Google's response: {response.text}")  # Show actual Google error
+                # Wait a bit and retry once
+                import time
+                time.sleep(2)
+                try:
+                    retry_response = requests.post(
+                        f"{self.base_url}/models/{self.model_name}:generateContent?key={self.api_key}",
+                        headers=headers,
+                        json=payload,
+                        timeout=30
+                    )
+                    if retry_response.status_code == 200:
+                        retry_result = retry_response.json()
+                        if "candidates" in retry_result and len(retry_result["candidates"]) > 0:
+                            return retry_result["candidates"][0]["content"]["parts"][0]["text"]
+                except:
+                    pass
                 return "I'm currently experiencing high demand. Please try again in a few moments."
             elif response.status_code == 401:
                 print(f"Gemini Auth Error: Invalid API key")

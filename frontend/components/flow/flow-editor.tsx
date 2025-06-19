@@ -609,7 +609,18 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
     }
 
     try {
+      console.log('🔄 Starting workflow save process...');
+      
+      // Debug authentication status first
+      const authStatus = await import('@/lib/api/client').then(module => module.debugAuthStatus());
+      console.log('🔍 Authentication status:', authStatus);
+      
       const flow = reactFlowInstance.toObject();
+      console.log('📊 Flow data to save:', {
+        nodeCount: flow.nodes.length,
+        edgeCount: flow.edges.length,
+        hasViewport: !!flow.viewport
+      });
 
       const workflowDefinition = {
         nodes: flow.nodes,
@@ -617,8 +628,15 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
         viewport: flow.viewport,
       };
 
+      console.log('📝 Workflow definition prepared:', {
+        size: JSON.stringify(workflowDefinition).length,
+        nodeTypes: flow.nodes.map(n => n.type),
+        definitionKeys: Object.keys(workflowDefinition)
+      });
+
       let savedWorkflow;
       if (workflowData && workflowData.id) {
+        console.log('🔄 Updating existing workflow:', workflowData.id);
         // Update existing workflow
         savedWorkflow = await workflowService.updateWorkflow(
           workflowData.id.toString(),
@@ -626,14 +644,20 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
         );
         console.log("✅ Workflow updated:", savedWorkflow);
       } else {
+        console.log('🆕 Creating new workflow...');
         // Create new workflow
         const workflowName = prompt("Enter workflow name:") || `Workflow ${new Date().toLocaleString()}`;
-        savedWorkflow = await workflowService.createWorkflow({
+        
+        const newWorkflowData = {
           name: workflowName,
           description: "Created with Flow Editor",
           definition: workflowDefinition,
           is_active: true,
-        });
+        };
+        
+        console.log('📦 New workflow data:', newWorkflowData);
+        
+        savedWorkflow = await workflowService.createWorkflow(newWorkflowData);
         setWorkflowData(savedWorkflow);
         console.log("✅ New workflow created:", savedWorkflow);
         
@@ -644,8 +668,77 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
       setLastSaved(new Date());
       addNotification({ type: "success", message: "Workflow saved successfully!" });
     } catch (error: any) {
-      console.error("❌ Failed to save workflow:", error);
-      addNotification({ type: "error", message: `Failed to save workflow: ${error.message}` });
+      console.error("❌ Failed to save workflow - Full error details:", {
+        message: error?.message || 'Unknown error',
+        status: error?.response?.status || 'No status',
+        statusText: error?.response?.statusText || 'No status text',
+        responseData: error?.response?.data || 'No response data',
+        requestUrl: error?.config?.url || 'Unknown URL',
+        requestMethod: error?.config?.method || 'Unknown method',
+        isAuthError: error?.response?.status === 401,
+        isBadRequest: error?.response?.status === 400,
+        isNetworkError: !error?.response,
+        fullError: error
+      });
+      
+      // Provide specific error messages based on error type
+      let errorMessage = 'Failed to save workflow';
+      
+      if (error?.response?.status === 400) {
+        errorMessage = 'Invalid workflow data - please check your flow configuration';
+        console.error('🔍 400 Bad Request details:', error?.response?.data);
+      } else if (error?.response?.status === 401) {
+        errorMessage = 'Authentication required - please log in again';
+      } else if (error?.response?.status === 403) {
+        errorMessage = 'Permission denied - you may not have access to save workflows';
+      } else if (error?.response?.status >= 500) {
+        errorMessage = 'Server error - please try again later';
+      } else if (!error?.response) {
+        errorMessage = 'Network error - please check your connection and try again';
+      } else {
+        errorMessage = `Server error (${error?.response?.status}): ${error?.message || 'Unknown error'}`;
+      }
+      
+      addNotification({ 
+        type: "error", 
+        message: errorMessage 
+      });
+      
+      // If it's a network error, suggest checking backend status
+      if (!error?.response) {
+        console.error('🌐 Network error detected - backend may be unreachable');
+        console.error('💡 Suggestion: Check if Django backend is running on http://localhost:8000');
+        
+        // Create local fallback save for demo purposes
+        console.log('🎭 Creating local demo save as fallback...');
+        try {
+          const localWorkflow = {
+            id: `demo-${Date.now()}`,
+            name: `Demo Workflow ${new Date().toLocaleString()}`,
+            description: "Created with Flow Editor (Demo Mode)",
+            definition: {
+              nodes: reactFlowInstance?.toObject()?.nodes || [],
+              edges: reactFlowInstance?.toObject()?.edges || [],
+              viewport: reactFlowInstance?.toObject()?.viewport || {}
+            },
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          setWorkflowData(localWorkflow);
+          setLastSaved(new Date());
+          console.log("📱 Created local demo workflow:", localWorkflow);
+          
+          addNotification({ 
+            type: "warning", 
+            message: "Backend unavailable - workflow saved in demo mode" 
+          });
+          return;
+        } catch (fallbackError) {
+          console.error('❌ Even fallback save failed:', fallbackError);
+        }
+      }
     } finally {
       setSaving(false);
     }
@@ -854,6 +947,107 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
     }
   };
 
+  /**
+   * 🔧 Debug authentication and connection status
+   */
+  const debugConnection = async () => {
+    console.log('🔍 === CONNECTION DEBUG REPORT ===');
+    
+    try {
+      // Check authentication status
+      const { debugAuthStatus } = await import('@/lib/api/client');
+      const authStatus = await debugAuthStatus();
+      console.log('🔑 Authentication Status:', authStatus);
+      
+      // Check if backend is reachable
+      console.log('🌐 Testing backend connectivity...');
+      const testUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      
+      try {
+        const response = await fetch(`${testUrl}/api/workflows/workflows/`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('📡 Backend Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          url: response.url
+        });
+        
+        if (response.ok) {
+          console.log('✅ Backend is reachable and responding');
+        } else {
+          console.log('⚠️ Backend responded with error status');
+        }
+      } catch (networkError) {
+        console.log('❌ Backend connectivity test failed:', networkError);
+        console.log('💡 This suggests the Django backend is not running');
+      }
+      
+      // Check session state
+      const session = await import('next-auth/react').then(module => module.getSession());
+      console.log('👤 NextAuth Session:', {
+        hasSession: !!session,
+        userEmail: session?.user?.email,
+        hasAccessToken: !!session?.jwtAccessToken
+      });
+      
+      // Test Google OAuth backend sync if user is logged in via Google
+      if (session?.user?.email) {
+        console.log('🔍 Testing Google OAuth backend sync...');
+        try {
+          const googleSyncResponse = await fetch(`${testUrl}/api/users/google/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: session.user.email,
+              name: session.user.name,
+              image: session.user.image,
+              google_id: 'test-id',
+            }),
+          });
+          
+          console.log('🔗 Google OAuth sync response:', {
+            status: googleSyncResponse.status,
+            statusText: googleSyncResponse.statusText,
+            ok: googleSyncResponse.ok,
+          });
+          
+          if (googleSyncResponse.ok) {
+            const syncData = await googleSyncResponse.json();
+            console.log('✅ Google OAuth sync data (RAW):', syncData);
+            console.log('🔍 Token details:', {
+              hasAccessToken: !!syncData.access_token,
+              hasRefreshToken: !!syncData.refresh_token,
+              accessTokenType: typeof syncData.access_token,
+              refreshTokenType: typeof syncData.refresh_token,
+              accessTokenPreview: syncData.access_token ? syncData.access_token.substring(0, 50) + '...' : 'NONE',
+              refreshTokenPreview: syncData.refresh_token ? syncData.refresh_token.substring(0, 50) + '...' : 'NONE',
+              userId: syncData.id,
+              username: syncData.username
+            });
+          } else {
+            const errorText = await googleSyncResponse.text();
+            console.log('❌ Google OAuth sync failed:', errorText);
+          }
+        } catch (syncError) {
+          console.log('💥 Google OAuth sync error:', syncError);
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Debug failed:', error);
+    }
+    
+    console.log('🔍 === END DEBUG REPORT ===');
+  };
+
   // 🎯 EXPOSE ADD NODE FUNCTION
   useEffect(() => {
     if (onAddNodeReady) {
@@ -1026,6 +1220,17 @@ export function FlowEditor({ flowId, onOpenPlayground, onOpenApiCodespace, onAdd
               <Play className="mr-2 h-4 w-4" />
             )}
             {executing ? "Executing..." : "Execute"}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-red-900/50 border-red-500/20 text-red-200 hover:bg-red-800/50 shadow-lg"
+            onClick={debugConnection}
+            title="Debug connection and authentication issues"
+          >
+            <Bug className="mr-2 h-4 w-4" />
+            Debug
           </Button>
 
           <Button

@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 
 class UserProfile(AbstractUser):
     bio = models.TextField(blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    profile_picture = models.URLField(max_length=500, blank=True, null=True)  # Changed to URLField to handle Google profile URLs
     position = models.CharField(max_length=100, blank=True, null=True)
     company = models.CharField(max_length=100, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
